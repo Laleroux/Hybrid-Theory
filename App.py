@@ -28,7 +28,7 @@ st.markdown('<p class="sub-title">28 Day Challenge</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Consistency over perfection. Never miss twice!</p>', unsafe_allow_html=True)
 
 # Data Persistence File
-DATA_FILE = "challenge_data_v5.json"
+DATA_FILE = "challenge_data_v6.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -144,10 +144,13 @@ start_dt = datetime.date.fromisoformat(st.session_state.app_data["start_date"])
 day_date_map = {day: start_dt + datetime.timedelta(days=day-1) for day in range(1, 29)}
 
 if view_mode == "Daily Logger":
-    current_profile = st.selectbox("Select Profile", contestant_names)
+    col_sel1, col_sel2 = st.columns(2)
+    my_profile = col_sel1.selectbox("Your Profile (Editable)", contestant_names, key="my_prof")
+    other_choices = ["None"] + [n for n in contestant_names if n != my_profile]
+    compare_profile = col_sel2.selectbox("Compare With (Side-by-Side)", other_choices, key="cmp_prof")
     
-    c_data_profile = st.session_state.app_data["contestants"][current_profile]
-    user_email = st.text_input(f"📧 Email Address for Weekly Reports ({current_profile})", value=c_data_profile.get("email", ""))
+    c_data_profile = st.session_state.app_data["contestants"][my_profile]
+    user_email = st.text_input(f"📧 Email Address for Weekly Reports ({my_profile})", value=c_data_profile.get("email", ""))
     c_data_profile["email"] = user_email
     
     selected_day = st.selectbox(
@@ -184,44 +187,90 @@ if view_mode == "Daily Logger":
             missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
             st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: <b>{missed_str}</b>. Focus on breaking this streak!</p>', unsafe_allow_html=True)
 
-    st.write(f"### 📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')}) — {current_profile}")
+    st.write(f"### 📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')})")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        for i in range(1, 6):
-            h_key = f"habit_{i}"
-            day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{current_profile}_d{selected_day}_{h_key}")
-    with col2:
-        for i in range(6, 11):
-            h_key = f"habit_{i}"
-            day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{current_profile}_d{selected_day}_{h_key}")
+    if compare_profile != "None":
+        cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
+        cmp_day_state = cmp_data_profile["days"][day_str]
+        
+        col_left, col_right = st.columns(2)
+        
+        with col_left:
+            st.markdown(f"#### 👤 {my_profile} (You)")
+            for i in range(1, 11):
+                h_key = f"habit_{i}"
+                day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
+        
+        with col_right:
+            st.markdown(f"#### 👥 {compare_profile} (Comparison)")
+            for i in range(1, 11):
+                h_key = f"habit_{i}"
+                st.checkbox(habits_info[h_key][0], value=cmp_day_state.get(h_key, False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_{h_key}")
+        
+        st.markdown("---")
+        col_n1, col_n2 = st.columns(2)
+        with col_n1:
+            daily_notes = st.text_area(f"📖 {my_profile}'s Daily Notes", value=day_state.get("notes", ""), key=f"{my_profile}_d{selected_day}_notes")
+            day_state["notes"] = daily_notes
+        with col_n2:
+            st.markdown(f"📖 **{compare_profile}'s Daily Notes:**")
+            cmp_notes = cmp_day_state.get("notes", "")
+            st.info(cmp_notes if cmp_notes else "No notes recorded.")
+            
+        st.markdown("---")
+        col_p1, col_p2 = st.columns(2)
+        with col_p1:
+            st.write(f"📸 **{my_profile}'s Photo Proof**")
+            uploaded_file = st.file_uploader("Upload image snapshot", type=["jpg", "jpeg", "png"], key=f"{my_profile}_d{selected_day}_photo_upload")
+            if uploaded_file is not None:
+                file_path = os.path.join("uploads", f"{my_profile}_day_{selected_day}_{uploaded_file.name}")
+                with open(file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                day_state["photo"] = file_path
+            if day_state.get("photo") and os.path.exists(day_state["photo"]):
+                st.image(day_state["photo"], caption=f"Proof for Day {selected_day} ({my_profile})", width=250)
+        with col_p2:
+            st.write(f"📸 **{compare_profile}'s Photo Proof**")
+            if cmp_day_state.get("photo") and os.path.exists(cmp_day_state["photo"]):
+                st.image(cmp_day_state["photo"], caption=f"Proof for Day {selected_day} ({compare_profile})", width=250)
+            else:
+                st.info("No photo uploaded.")
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            for i in range(1, 6):
+                h_key = f"habit_{i}"
+                day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
+        with col2:
+            for i in range(6, 11):
+                h_key = f"habit_{i}"
+                day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
 
-    daily_notes = st.text_area("📖 Daily Notes / Reflections / Prayer Journal", value=day_state.get("notes", ""), key=f"{current_profile}_d{selected_day}_notes")
-    day_state["notes"] = daily_notes
+        daily_notes = st.text_area("📖 Daily Notes / Reflections / Prayer Journal", value=day_state.get("notes", ""), key=f"{my_profile}_d{selected_day}_notes")
+        day_state["notes"] = daily_notes
 
-    # Optional Photo Proof Uploader
-    st.markdown("---")
-    st.write("📸 **Optional Meal / Workout Photo Proof**")
-    uploaded_file = st.file_uploader("Upload image snapshot", type=["jpg", "jpeg", "png"], key=f"{current_profile}_d{selected_day}_photo_upload")
-    if uploaded_file is not None:
-        file_path = os.path.join("uploads", f"{current_profile}_day_{selected_day}_{uploaded_file.name}")
-        with open(file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        day_state["photo"] = file_path
+        st.markdown("---")
+        st.write("📸 **Optional Meal / Workout Photo Proof**")
+        uploaded_file = st.file_uploader("Upload image snapshot", type=["jpg", "jpeg", "png"], key=f"{my_profile}_d{selected_day}_photo_upload")
+        if uploaded_file is not None:
+            file_path = os.path.join("uploads", f"{my_profile}_day_{selected_day}_{uploaded_file.name}")
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            day_state["photo"] = file_path
 
-    if day_state.get("photo") and os.path.exists(day_state["photo"]):
-        st.image(day_state["photo"], caption=f"Proof for Day {selected_day} ({current_profile})", width=300)
+        if day_state.get("photo") and os.path.exists(day_state["photo"]):
+            st.image(day_state["photo"], caption=f"Proof for Day {selected_day} ({my_profile})", width=300)
 
     save_data(st.session_state.app_data)
 
     daily_total = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
     
     st.write("---")
-    st.info(f"✨ **Day {selected_day} Score:** **{daily_total} / 10 Points**")
+    st.info(f"✨ **Day {selected_day} Score for {my_profile}:** **{daily_total} / 10 Points**")
 
-    total_cumulative = calculate_total(current_profile)
+    total_cumulative = calculate_total(my_profile)
     st.write("---")
-    st.subheader("🏆 Milestone Rewards Status")
+    st.subheader(f"🏆 Milestone Rewards Status ({my_profile})")
     st.write(f"**Total Cumulative Points:** {total_cumulative} / 280")
     
     if total_cumulative >= 280:
