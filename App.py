@@ -11,13 +11,13 @@ st.set_page_config(page_title="Hybrid Theory - 28 Day Challenge", page_icon="�
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling (Enhanced Main Title Hierarchy & Smaller Subsections)
+# Custom Styling (Updated Font Sizing: Main Title 60px, Sub-Title 58px, Subsections 50px)
 st.markdown("""
     <style>
-    .main-title { font-size: 42px; font-weight: 800; color: #2E4053; text-align: center; margin-bottom: 0px; line-height: 1.1; }
-    .sub-title { font-size: 22px; font-weight: 700; color: #566573; text-align: center; margin-top: 4px; margin-bottom: 4px; }
+    .main-title { font-size: 60px; font-weight: 800; color: #2E4053; text-align: center; margin-bottom: 0px; line-height: 1.1; }
+    .sub-title { font-size: 58px; font-weight: 700; color: #566573; text-align: center; margin-top: 4px; margin-bottom: 4px; line-height: 1.1; }
     .subtitle { font-size: 14px; color: #7F8C8D; text-align: center; margin-bottom: 25px; }
-    .section-header { font-size: 16px; font-weight: 600; color: #34495E; margin-top: 15px; margin-bottom: 8px; }
+    .section-header { font-size: 50px; font-weight: 700; color: #34495E; margin-top: 20px; margin-bottom: 12px; line-height: 1.1; }
     .alert-box { background-color: #FADBD8; padding: 12px; border-radius: 8px; color: #922B21; font-weight: bold; margin-bottom: 10px; }
     .success-box { background-color: #D4EFDF; padding: 12px; border-radius: 8px; color: #145A32; font-weight: bold; }
     .activity-card { background-color: #F8F9F9; padding: 10px; border-left: 4px solid #3366CC; border-radius: 4px; margin-bottom: 8px; font-size: 13px; }
@@ -187,7 +187,7 @@ if view_mode == "Daily Logger":
             missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
             st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: <b>{missed_str}</b>. Focus on breaking this streak!</p>', unsafe_allow_html=True)
 
-    st.markdown(f'<p class="section-header">📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')})</p>', unsafe_allow_html=True)
+    st.markdown(f'<p class="section-header">📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime("%d %B %Y")})</p>', unsafe_allow_html=True)
     
     if compare_profile != "None":
         cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
