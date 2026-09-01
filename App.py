@@ -11,22 +11,46 @@ st.set_page_config(page_title="Hybrid Theory - 28 Day Challenge", page_icon="�
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling (Updated Font Sizing: Main Title 60px, Sub-Title 58px, Subsections 50px)
+# Custom Styling for Large, Eye-Catching Header
 st.markdown("""
     <style>
-    .main-title { font-size: 60px; font-weight: 800; color: #2E4053; text-align: center; margin-bottom: 0px; line-height: 1.1; }
-    .sub-title { font-size: 58px; font-weight: 700; color: #566573; text-align: center; margin-top: 4px; margin-bottom: 4px; line-height: 1.1; }
-    .subtitle { font-size: 14px; color: #7F8C8D; text-align: center; margin-bottom: 25px; }
-    .section-header { font-size: 50px; font-weight: 700; color: #34495E; margin-top: 20px; margin-bottom: 12px; line-height: 1.1; }
-    .alert-box { background-color: #FADBD8; padding: 12px; border-radius: 8px; color: #922B21; font-weight: bold; margin-bottom: 10px; }
-    .success-box { background-color: #D4EFDF; padding: 12px; border-radius: 8px; color: #145A32; font-weight: bold; }
-    .activity-card { background-color: #F8F9F9; padding: 10px; border-left: 4px solid #3366CC; border-radius: 4px; margin-bottom: 8px; font-size: 13px; }
+    .header-container {
+        background: linear-gradient(135deg, #1B2631, #34495E);
+        padding: 35px 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .main-title-custom {
+        font-size: 58px;
+        font-weight: 800;
+        color: #FFFFFF !important;
+        margin: 0;
+        line-height: 1.1;
+        letter-spacing: 1px;
+    }
+    .sub-title-custom {
+        font-size: 34px;
+        font-weight: 600;
+        color: #D5D8DC !important;
+        margin-top: 10px;
+        margin-bottom: 0;
+    }
+    .tagline-custom {
+        font-size: 14px;
+        color: #A6ACAF !important;
+        margin-top: 12px;
+        margin-bottom: 0;
+        letter-spacing: 0.5px;
+    }
     </style>
+    <div class="header-container">
+        <h1 class="main-title-custom">Hybrid Theory</h1>
+        <h2 class="sub-title-custom">28 Day Challenge</h2>
+        <p class="tagline-custom">Consistency over perfection. Never miss twice!</p>
+    </div>
 """, unsafe_allow_html=True)
-
-st.markdown('<p class="main-title">Hybrid Theory</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">28 Day Challenge</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Consistency over perfection. Never miss twice!</p>', unsafe_allow_html=True)
 
 # Data Persistence File
 DATA_FILE = "challenge_data_v6.json"
@@ -64,7 +88,7 @@ def save_data(data):
 if "app_data" not in st.session_state:
     st.session_state.app_data = load_data()
 
-# Updated Habit definitions
+# Habit definitions
 habits_info = {
     "habit_1": ("1. Daily H2O", "💧 **Guideline:** Drink between 6 to 8 glasses of water a day."),
     "habit_2": ("2. Clean Fuel (1,500 Cal)", "🥗 **Guideline:** Stick to the high-volume 1500-calorie clean meal structure (gluten-free, lactose-free, sugar-free)."),
@@ -166,13 +190,13 @@ if view_mode == "Daily Logger":
     daily_total = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
 
     if daily_total < 5:
-        st.markdown(f'<p class="alert-box">⚠️ Low Score Warning: Your daily score is {daily_total} (below 5 points). Let\'s push to hit more habits tomorrow!</p>', unsafe_allow_html=True)
+        st.warning(f"⚠️ Low Score Warning: Your daily score is {daily_total} (below 5 points). Let's push to hit more habits tomorrow!")
 
     if selected_day > 1:
         prev_day_str = str(selected_day - 1)
         prev_core = sum(1 for i in range(1, 11) if c_data_profile["days"][prev_day_str].get(f"habit_{i}", False))
         if daily_total < 7 and prev_core < 7:
-            st.markdown('<p class="alert-box">🚨 "Never Miss Twice" Alert: Your core score has dropped below 7 for two consecutive days. Time for a quick bounce-back!</p>', unsafe_allow_html=True)
+            st.error('🚨 "Never Miss Twice" Alert: Your core score has dropped below 7 for two consecutive days. Time for a quick bounce-back!')
 
     if selected_day > 1:
         prev_day_str = str(selected_day - 1)
@@ -185,9 +209,9 @@ if view_mode == "Daily Logger":
         
         if missed_twice_list:
             missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
-            st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: <b>{missed_str}</b>. Focus on breaking this streak!</p>', unsafe_allow_html=True)
+            st.warning(f'🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: **{missed_str}**. Focus on breaking this streak!')
 
-    st.markdown(f'<p class="section-header">📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime("%d %B %Y")})</p>', unsafe_allow_html=True)
+    st.subheader(f"📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')})")
     
     if compare_profile != "None":
         cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
@@ -270,15 +294,15 @@ if view_mode == "Daily Logger":
 
     total_cumulative = calculate_total(my_profile)
     st.write("---")
-    st.markdown(f'<p class="section-header">🏆 Milestone Rewards Status ({my_profile})</p>', unsafe_allow_html=True)
+    st.subheader(f"🏆 Milestone Rewards Status ({my_profile})")
     st.write(f"**Total Cumulative Points:** {total_cumulative} / 280")
     
     if total_cumulative >= 280:
-        st.markdown('<p class="success-box">🏆 Level 3 Unlocked: Full Transformation Grand Reward Achieved!</p>', unsafe_allow_html=True)
+        st.success("🏆 Level 3 Unlocked: Full Transformation Grand Reward Achieved!")
     elif total_cumulative >= 200:
-        st.markdown('<p class="success-box">🌟 Level 2 Unlocked: Mid-Challenge Reward Unlocked!</p>', unsafe_allow_html=True)
+        st.success("🌟 Level 2 Unlocked: Mid-Challenge Reward Unlocked!")
     elif total_cumulative >= 100:
-        st.markdown('<p class="success-box">🎉 Level 1 Unlocked: Little Treat Unlocked!</p>', unsafe_allow_html=True)
+        st.success("🎉 Level 1 Unlocked: Little Treat Unlocked!")
     else:
         st.write("🌱 Keep going! Hit 100 points to unlock your first milestone treat.")
 
@@ -407,7 +431,7 @@ else:
     st.write("---")
     st.subheader("🎉 Group Joint Goal Status (Target: 500+ Combined Points)")
     if combined_total >= 500:
-        st.markdown('<p class="success-box">🥂 UNLOCKED! Spa Day, Lunch & Shopping Trip Achieved Together! Amazing job!</p>', unsafe_allow_html=True)
+        st.success("🥂 UNLOCKED! Spa Day, Lunch & Shopping Trip Achieved Together! Amazing job!")
         st.balloons()
     else:
         points_needed = 500 - combined_total
@@ -435,7 +459,7 @@ else:
     if activity_stream:
         for act in activity_stream[:8]:
             note_text = f' — "{act["notes"]}"' if act["notes"] else ""
-            st.markdown(f'<div class="activity-card"><b>{act["contestant"]}</b> checked in for Day {act["day"]} with <b>{act["score"]} points</b>{note_text}</div>', unsafe_allow_html=True)
+            st.info(f"**{act['contestant']}** checked in for Day {act['day']} with **{act['score']} points**{note_text}")
     else:
         st.info("No activity recorded yet. Start logging your daily habits to populate the live feed!")
 
