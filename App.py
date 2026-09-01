@@ -81,7 +81,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Data Persistence File
-DATA_FILE = "challenge_data_v8.json"
+DATA_FILE = "challenge_data_v11.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -93,6 +93,10 @@ def load_data():
                     for idx, (name, c_info) in enumerate(data["contestants"].items()):
                         if "color" not in c_info:
                             c_info["color"] = default_colors[idx % len(default_colors)]
+                        if "vetoed_habit" not in c_info:
+                            c_info["vetoed_habit"] = None # e.g. "habit_4"
+                        if "custom_replacement" not in c_info:
+                            c_info["custom_replacement"] = {"title": "", "guideline": ""}
                 return data
         except Exception:
             pass
@@ -100,8 +104,20 @@ def load_data():
     default_structure = {
         "start_date": "2026-09-01",
         "contestants": {
-            "Contestant 1": {"email": "", "color": "#1B4F72", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {f"bonus_{i}": False for i in range(1, 6)} | {"notes": "", "photo": ""} for day in range(1, 29)}},
-            "Contestant 2": {"email": "", "color": "#117A65", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {f"bonus_{i}": False for i in range(1, 6)} | {"notes": "", "photo": ""} for day in range(1, 29)}}
+            "Contestant 1": {
+                "email": "", 
+                "color": "#1B4F72", 
+                "vetoed_habit": None,
+                "custom_replacement": {"title": "", "guideline": ""},
+                "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {f"bonus_{i}": False for i in range(1, 6)} | {"notes": "", "photo": ""} for day in range(1, 29)}
+            },
+            "Contestant 2": {
+                "email": "", 
+                "color": "#117A65", 
+                "vetoed_habit": None,
+                "custom_replacement": {"title": "", "guideline": ""},
+                "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {f"bonus_{i}": False for i in range(1, 6)} | {"notes": "", "photo": ""} for day in range(1, 29)}
+            }
         }
     }
     return default_structure
@@ -135,7 +151,7 @@ bonus_info = {
     "bonus_2": ("🔥 Bonus: Extended Training (30–60 mins)", "💪 Exercised between 30 minutes and 1 hour today."),
     "bonus_3": ("🔥 Bonus: High Hydration (>8 glasses)", "💧 Drank more than 8 glasses of water today."),
     "bonus_4": ("🔥 Bonus: Extended Unplug (>30 mins)", "📵 Had more than 30 minutes of intentional non-screen time."),
-    "bonus_5": ("🔥 Weekly Parkrun Bonus (+5 pts)", "🏃‍♂️ Completed your Saturday 5km Parkrun event.")
+    "bonus_5": ("🔥 Saturday Parkrun Bonus (+5 pts)", "🏃‍♂️ Completed your Saturday 5km Parkrun event.")
 }
 
 # --- SIDEBAR: CHALLENGE & CONTESTANT MANAGEMENT ---
@@ -150,10 +166,11 @@ selected_start_date = st.sidebar.date_input("Challenge Start Date", value=parsed
 st.session_state.app_data["start_date"] = selected_start_date.isoformat()
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("👥 Contestants Management (Max 10)")
+st.sidebar.subheader("👥 Contestants Management")
 
 contestant_names = list(st.session_state.app_data["contestants"].keys())
 
+# Add New Contestant
 if len(contestant_names) < 10:
     new_name = st.sidebar.text_input("Add New Contestant Name")
     if st.sidebar.button("Add Contestant") and new_name:
@@ -165,14 +182,76 @@ if len(contestant_names) < 10:
             st.session_state.app_data["contestants"][new_name] = {
                 "email": "",
                 "color": assigned_color,
+                "vetoed_habit": None,
+                "custom_replacement": {"title": "", "guideline": ""},
                 "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {f"bonus_{i}": False for i in range(1, 6)} | {"notes": "", "photo": ""} for day in range(1, 29)}
             }
             save_data(st.session_state.app_data)
             st.rerun()
 
+# Edit Existing Contestant Name
+if len(contestant_names) > 0:
+    with st.sidebar.expander("✏️ Rename Contestant"):
+        target_to_rename = st.selectbox("Select Contestant to Rename", contestant_names, key="rename_select")
+        new_entered_name = st.text_input("New Name", value=target_to_rename, key="rename_input")
+        if st.button("Save New Name"):
+            if not new_entered_name.strip():
+                st.sidebar.error("Name cannot be empty!")
+            elif new_entered_name in contestant_names and new_entered_name != target_to_rename:
+                st.sidebar.error("That name already exists!")
+            else:
+                updated_contestants = {}
+                for name, info in st.session_state.app_data["contestants"].items():
+                    if name == target_to_rename:
+                        updated_contestants[new_entered_name] = info
+                    else:
+                        updated_contestants[name] = info
+                st.session_state.app_data["contestants"] = updated_contestants
+                save_data(st.session_state.app_data)
+                st.success(f"Renamed {target_to_rename} to {new_entered_name}!")
+                st.rerun()
+
+# Habit Veto & Custom Replacement (1 per contestant)
+if len(contestant_names) > 0:
+    with st.sidebar.expander("🚫 Veto Habit & Replace (1 per Contestant)"):
+        target_v_contestant = st.selectbox("Select Contestant", contestant_names, key="v_contestant_select")
+        v_c_info = st.session_state.app_data["contestants"][target_v_contestant]
+        
+        current_vetoed = v_c_info.get("vetoed_habit", None)
+        habit_options_labels = {k: v[0] for k, v in habits_info.items()}
+        habit_keys_list = list(habits_info.keys())
+        
+        default_index = habit_keys_list.index(current_vetoed) if current_vetoed in habit_keys_list else 0
+        
+        veto_choice = st.selectbox("Select Core Habit to Veto (or None)", ["None"] + habit_keys_list, format_func=lambda x: "No Veto (Keep Standard 10)" if x == "None" else habit_options_labels[x], key="veto_dropdown")
+        
+        existing_rep = v_c_info.get("custom_replacement", {"title": "", "guideline": ""})
+        
+        if veto_choice != "None":
+            rep_title_input = st.text_input("Replacement Habit Name (e.g., 5km Cycling Daily)", value=existing_rep.get("title", ""))
+            rep_guide_input = st.text_area("Replacement Rule / Guideline", value=existing_rep.get("guideline", ""))
+            
+            if st.button("Save Veto & Replacement"):
+                v_c_info["vetoed_habit"] = veto_choice
+                v_c_info["custom_replacement"] = {
+                    "title": rep_title_input.strip(),
+                    "guideline": rep_guide_input.strip()
+                }
+                save_data(st.session_state.app_data)
+                st.success(f"Habit veto updated for {target_v_contestant}!")
+                st.rerun()
+        else:
+            if st.button("Clear Veto & Reset to Standard 10"):
+                v_c_info["vetoed_habit"] = None
+                v_c_info["custom_replacement"] = {"title": "", "guideline": ""}
+                save_data(st.session_state.app_data)
+                st.success(f"Veto cleared for {target_v_contestant}!")
+                st.rerun()
+
+# Remove Contestant
 if len(contestant_names) > 1:
-    with st.sidebar.expander("Manage Existing Contestants"):
-        target_to_remove = st.selectbox("Select to Remove", ["None"] + contestant_names)
+    with st.sidebar.expander("🗑️ Remove Contestant"):
+        target_to_remove = st.selectbox("Select to Remove", ["None"] + contestant_names, key="remove_select")
         if target_to_remove != "None" and st.button("Remove Contestant"):
             del st.session_state.app_data["contestants"][target_to_remove]
             save_data(st.session_state.app_data)
@@ -247,9 +326,8 @@ if view_mode == "Daily Logger":
     day_str = str(selected_day)
     day_state = c_data_profile["days"][day_str]
     current_day_date = day_date_map[selected_day]
-    is_saturday = (current_day_date.weekday() == 5) # 5 represents Saturday in Python datetime
+    is_saturday = (current_day_date.weekday() == 5)
     
-    # If the day is changed to a non-Saturday, automatically uncheck bonus_5 to keep data valid
     if not is_saturday and day_state.get("bonus_5", False):
         day_state["bonus_5"] = False
 
@@ -271,29 +349,46 @@ if view_mode == "Daily Logger":
         prev_day_str = str(selected_day - 1)
         prev_day_data = c_data_profile["days"][prev_day_str]
         missed_twice_list = []
+        vetoed = c_data_profile.get("vetoed_habit", None)
+        custom_rep = c_data_profile.get("custom_replacement", {"title": ""})
+        
         for i in range(1, 11):
             h_key = f"habit_{i}"
+            if h_key == vetoed and custom_rep.get("title"):
+                h_name = f"{i}. {custom_rep['title']}"
+            else:
+                h_name = habits_info[h_key][0]
+                
             if not day_state.get(h_key, False) and not prev_day_data.get(h_key, False):
-                missed_twice_list.append(habits_info[h_key][0])
+                missed_twice_list.append(h_name)
         
         if missed_twice_list:
-            missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
+            missed_str = ", ".join([item.split(". ")[1] if ". " in item else item for item in missed_twice_list])
             st.warning(f'🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: **{missed_str}**. Focus on breaking this streak!')
 
     st.subheader(f"📝 Check-in for Day {selected_day} ({current_day_date.strftime('%A, %d %B %Y')})")
     
+    my_veto = c_data_profile.get("vetoed_habit", None)
+    my_rep = c_data_profile.get("custom_replacement", {"title": "", "guideline": ""})
+
     if compare_profile != "None":
         cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
         cmp_day_state = cmp_data_profile["days"][day_str]
+        cmp_veto = cmp_data_profile.get("vetoed_habit", None)
+        cmp_rep = cmp_data_profile.get("custom_replacement", {"title": "", "guideline": ""})
         
         col_left, col_right = st.columns(2)
         
         with col_left:
             st.markdown(f"**👤 {my_profile} (You)**")
-            st.markdown("##### Core Habits")
+            st.markdown("##### Core Habits (10 Total)")
             for i in range(1, 11):
                 h_key = f"habit_{i}"
-                day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
+                if h_key == my_veto and my_rep.get("title"):
+                    label = f"{i}. {my_rep['title']}"
+                else:
+                    label = habits_info[h_key][0]
+                day_state[h_key] = st.checkbox(label, value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
             
             st.markdown("##### 🔥 Daily Bonus Points")
             for i in range(1, 5):
@@ -309,10 +404,14 @@ if view_mode == "Daily Logger":
         
         with col_right:
             st.markdown(f"**👥 {compare_profile} (Comparison)**")
-            st.markdown("##### Core Habits")
+            st.markdown("##### Core Habits (10 Total)")
             for i in range(1, 11):
                 h_key = f"habit_{i}"
-                st.checkbox(habits_info[h_key][0], value=cmp_day_state.get(h_key, False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_{h_key}")
+                if h_key == cmp_veto and cmp_rep.get("title"):
+                    label = f"{i}. {cmp_rep['title']}"
+                else:
+                    label = habits_info[h_key][0]
+                st.checkbox(label, value=cmp_day_state.get(h_key, False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_{h_key}")
             
             st.markdown("##### 🔥 Daily Bonus Points")
             for i in range(1, 5):
@@ -355,11 +454,19 @@ if view_mode == "Daily Logger":
         with col1:
             for i in range(1, 6):
                 h_key = f"habit_{i}"
-                day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
+                if h_key == my_veto and my_rep.get("title"):
+                    label = f"{i}. {my_rep['title']}"
+                else:
+                    label = habits_info[h_key][0]
+                day_state[h_key] = st.checkbox(label, value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
         with col2:
             for i in range(6, 11):
                 h_key = f"habit_{i}"
-                day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
+                if h_key == my_veto and my_rep.get("title"):
+                    label = f"{i}. {my_rep['title']}"
+                else:
+                    label = habits_info[h_key][0]
+                day_state[h_key] = st.checkbox(label, value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
 
         st.markdown("##### 🔥 Daily Bonus Points (+1 each)")
         b_col1, b_col2 = st.columns(2)
@@ -447,12 +554,28 @@ elif view_mode == "Rules & Guidelines":
     st.markdown("Welcome to **HYBRID THEORY: 28 Day Challenge**! Remember our core philosophy: **Consistency over perfection. Never miss twice!**")
     st.markdown("---")
     
-    st.markdown("### 📋 Daily Habit Guidelines")
+    st.markdown("### 📋 Core Habit Guidelines (10 Total)")
     for h_key, (title, desc) in habits_info.items():
         st.markdown(f"**{title}**")
         st.markdown(f"> {desc}")
         st.markdown("")
         
+    st.markdown("### 🚫 Contestants' Vetoed Habits & Custom Replacements")
+    any_vetoes = False
+    for name, c_info in st.session_state.app_data["contestants"].items():
+        vetoed = c_info.get("vetoed_habit", None)
+        rep = c_info.get("custom_replacement", {"title": "", "guideline": ""})
+        if vetoed and rep.get("title"):
+            any_vetoes = True
+            original_habit_name = habits_info[vetoed][0]
+            st.markdown(f"**{name}'s Custom Veto:**")
+            st.markdown(f"- *Vetoed Standard Habit:* {original_habit_name}")
+            st.markdown(f"- *Replacement Habit:* **{rep['title']}**")
+            st.markdown(f"> **Guideline:** {rep.get('guideline', 'No guideline provided.')}")
+            st.markdown("")
+    if not any_vetoes:
+        st.info("No habit vetoes have been configured yet. Use the sidebar to veto and replace a core habit for any contestant!")
+
     st.markdown("---")
     st.markdown("### 🔥 Bonus Points Guidelines")
     for b_key, (title, desc) in bonus_info.items():
@@ -515,11 +638,17 @@ elif view_mode == "Analytics & Graphs":
     for h_key, (h_title, _) in habits_info.items():
         completed_count = 0
         for name, c_info in contestants_dict.items():
+            vetoed = c_info.get("vetoed_habit", None)
+            rep = c_info.get("custom_replacement", {"title": ""})
+            
+            # If this habit is vetoed for this contestant, count completions under replacement if applicable
             for day in range(1, 29):
                 if c_info["days"][str(day)].get(h_key, False):
                     completed_count += 1
+        
+        display_label = h_title.split(". ")[1]
         habit_summary.append({
-            "Habit": h_title.split(". ")[1],
+            "Habit": display_label,
             "Completions": completed_count
         })
         
@@ -590,6 +719,8 @@ else:
     report_profile = st.selectbox("Select Profile for Report", contestant_names, key="rep_profile")
     rep_data = st.session_state.app_data["contestants"][report_profile]
     rep_email = rep_data.get("email", "")
+    rep_veto = rep_data.get("vetoed_habit", None)
+    rep_rep = rep_data.get("custom_replacement", {"title": ""})
     
     if st.button("📥 Generate Weekly Report Summary"):
         st.success(f"Report compiled successfully for **{report_profile}** (Target Email: {rep_email if rep_email else 'No email set yet'})!")
@@ -607,12 +738,16 @@ else:
         st.write(f"### 📋 Performance Breakdown for {report_profile}")
         st.write(f"- **Total Accumulated Points:** {total_gained}")
         st.write(f"- **Challenge Start Date Synced:** {start_dt.strftime('%d %B %Y')}")
-        st.write(f"- **Areas where points were gained:** Consistent core, daily bonus, and Saturday Parkrun completions.")
+        st.write(f"- **Areas where points were gained:** Consistent core habits, daily bonuses, and Saturday Parkruns.")
         st.write(f"- **Habit Drop-off Areas (Most missed items across recorded days):**")
         
         sorted_misses = sorted(missed_counts.items(), key=lambda x: x[1], reverse=True)
         for h_key, count in sorted_misses[:3]:
-            st.write(f"  * *{habits_info[h_key][0]}* (Missed {count} times)")
+            if h_key == rep_veto and rep_rep.get("title"):
+                h_label = f"{h_key.split('_')[1]}. {rep_rep['title']}"
+            else:
+                h_label = habits_info[h_key][0]
+            st.write(f"  * *{h_label}* (Missed {count} times)")
             
         if rep_email:
             st.info(f"📬 In a fully hosted deployment, this formatted report would automatically be dispatched to **{rep_email}** every week!")
