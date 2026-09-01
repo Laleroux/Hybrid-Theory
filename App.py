@@ -28,7 +28,7 @@ st.markdown('<p class="sub-title">28 Day Challenge</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Consistency over perfection. Never miss twice!</p>', unsafe_allow_html=True)
 
 # Data Persistence File
-DATA_FILE = "challenge_data_v4.json"
+DATA_FILE = "challenge_data_v5.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -47,8 +47,8 @@ def load_data():
     default_structure = {
         "start_date": "2026-09-01",
         "contestants": {
-            "Contestant 1": {"email": "", "color": "#FF69B4", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": "", "photo": ""} for day in range(1, 29)}},
-            "Contestant 2": {"email": "", "color": "#3366CC", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": "", "photo": ""} for day in range(1, 29)}}
+            "Contestant 1": {"email": "", "color": "#FF69B4", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"notes": "", "photo": ""} for day in range(1, 29)}},
+            "Contestant 2": {"email": "", "color": "#3366CC", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"notes": "", "photo": ""} for day in range(1, 29)}}
         }
     }
     return default_structure
@@ -104,7 +104,7 @@ if len(contestant_names) < 10:
             st.session_state.app_data["contestants"][new_name] = {
                 "email": "",
                 "color": assigned_color,
-                "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": "", "photo": ""} for day in range(1, 29)}
+                "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"notes": "", "photo": ""} for day in range(1, 29)}
             }
             save_data(st.session_state.app_data)
             st.rerun()
@@ -137,8 +137,7 @@ def calculate_total(c_name):
     for day in range(1, 29):
         d_str = str(day)
         core = sum(1 for i in range(1, 11) if c_days[d_str].get(f"habit_{i}", False))
-        bonus = c_days[d_str].get("bonus", 0)
-        total += core + bonus
+        total += core
     return total
 
 start_dt = datetime.date.fromisoformat(st.session_state.app_data["start_date"])
@@ -160,9 +159,7 @@ if view_mode == "Daily Logger":
     day_str = str(selected_day)
     day_state = c_data_profile["days"][day_str]
     
-    core_completed = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
-    bonus_pts = day_state.get("bonus", 0)
-    daily_total = core_completed + bonus_pts
+    daily_total = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
 
     # Warnings placed right underneath the header/slogan area
     if daily_total < 5:
@@ -171,7 +168,7 @@ if view_mode == "Daily Logger":
     if selected_day > 1:
         prev_day_str = str(selected_day - 1)
         prev_core = sum(1 for i in range(1, 11) if c_data_profile["days"][prev_day_str].get(f"habit_{i}", False))
-        if core_completed < 7 and prev_core < 7:
+        if daily_total < 7 and prev_core < 7:
             st.markdown('<p class="alert-box">🚨 "Never Miss Twice" Alert: Your core score has dropped below 7 for two consecutive days. Time for a quick bounce-back!</p>', unsafe_allow_html=True)
 
     if selected_day > 1:
@@ -199,9 +196,6 @@ if view_mode == "Daily Logger":
             h_key = f"habit_{i}"
             day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{current_profile}_d{selected_day}_{h_key}")
 
-    bonus_pts = st.number_input("⭐ Daily Bonus Points (Max 3)", min_value=0, max_value=3, value=day_state.get("bonus", 0), key=f"{current_profile}_d{selected_day}_bonus")
-    day_state["bonus"] = bonus_pts
-
     daily_notes = st.text_area("📖 Daily Notes / Reflections / Prayer Journal", value=day_state.get("notes", ""), key=f"{current_profile}_d{selected_day}_notes")
     day_state["notes"] = daily_notes
 
@@ -220,11 +214,10 @@ if view_mode == "Daily Logger":
 
     save_data(st.session_state.app_data)
 
-    core_completed = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
-    daily_total = core_completed + bonus_pts
+    daily_total = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
     
     st.write("---")
-    st.info(f"✨ **Day {selected_day} Score:** {core_completed} (Core) + {bonus_pts} (Bonus) = **{daily_total} Points**")
+    st.info(f"✨ **Day {selected_day} Score:** **{daily_total} / 10 Points**")
 
     total_cumulative = calculate_total(current_profile)
     st.write("---")
@@ -249,15 +242,12 @@ elif view_mode == "28-Day Overview Grid":
     for day in range(1, 29):
         d_str = str(day)
         core = sum(1 for i in range(1, 11) if c_days[d_str].get(f"habit_{i}", False))
-        bonus = c_days[d_str].get("bonus", 0)
         notes = c_days[d_str].get("notes", "")
         photo_status = "📷 Attached" if c_days[d_str].get("photo") else "—"
         grid_data.append({
             "Day": f"Day {day}",
             "Date": day_date_map[day].strftime('%d %b %Y'),
-            "Core Habits (/10)": core,
-            "Bonus": bonus,
-            "Total": core + bonus,
+            "Score (/10)": core,
             "Photo": photo_status,
             "Notes / Journal": notes if notes else "—"
         })
@@ -277,9 +267,6 @@ elif view_mode == "Rules & Guidelines":
         st.markdown("")
         
     st.markdown("---")
-    st.markdown("### ⭐ Bonus Points (Max 3 per day)")
-    st.markdown("You can earn up to **3 extra bonus points** each day by completing additional stretch goals, such as extra physical activity, dedicated deep-work sessions, or going above and beyond your daily routine.")
-    
     st.markdown("### ⚠️ The 'Never Miss Twice' Rule")
     st.markdown("Life happens, and missing a habit once is entirely fine! However, the golden rule is **never miss the same habit two days in a row**. The app will actively alert you if a core score drops too low or if any habit is missed on consecutive days.")
 
@@ -304,8 +291,7 @@ elif view_mode == "Analytics & Graphs":
         for day in range(1, 29):
             d_str = str(day)
             core = sum(1 for i in range(1, 11) if c_days[d_str].get(f"habit_{i}", False))
-            bonus = c_days[d_str].get("bonus", 0)
-            running_total += core + bonus
+            running_total += core
             chart_data.append({
                 "Day": day,
                 "Contestant": name,
@@ -336,7 +322,6 @@ elif view_mode == "Analytics & Graphs":
     habit_summary = []
     for h_key, (h_title, _) in habits_info.items():
         completed_count = 0
-        total_possible = len(contestant_names) * 28
         for name, c_info in contestants_dict.items():
             for day in range(1, 29):
                 if c_info["days"][str(day)].get(h_key, False):
@@ -382,23 +367,20 @@ else:
     st.write("---")
     st.subheader("⚡ Live Group Activity Feed")
     
-    # Generate live activity stream from recent logs
     activity_stream = []
     for name, c_info in st.session_state.app_data["contestants"].items():
         for day in range(1, 29):
             d_str = str(day)
             d_data = c_info["days"][d_str]
             core = sum(1 for i in range(1, 11) if d_data.get(f"habit_{i}", False))
-            bonus = d_data.get("bonus", 0)
-            if core > 0 or bonus > 0:
+            if core > 0:
                 activity_stream.append({
                     "day": day,
                     "contestant": name,
-                    "score": core + bonus,
+                    "score": core,
                     "notes": d_data.get("notes", "")
                 })
     
-    # Sort by most recent day descending
     activity_stream.sort(key=lambda x: x["day"], reverse=True)
     
     if activity_stream:
@@ -430,7 +412,7 @@ else:
         st.write(f"### 📋 Performance Breakdown for {report_profile}")
         st.write(f"- **Total Accumulated Points:** {total_gained}")
         st.write(f"- **Challenge Start Date Synced:** {start_dt.strftime('%d %B %Y')}")
-        st.write(f"- **Areas where points were gained:** Consistent core habit completions & daily bonuses.")
+        st.write(f"- **Areas where points were gained:** Consistent core habit completions.")
         st.write(f"- **Habit Drop-off Areas (Most missed items across recorded days):**")
         
         sorted_misses = sorted(missed_counts.items(), key=lambda x: x[1], reverse=True)
@@ -441,4 +423,3 @@ else:
             st.info(f"📬 In a fully hosted deployment, this formatted report would automatically be dispatched to **{rep_email}** every week!")
         else:
             st.warning("⚠️ Enter your email address in the Daily Logger view to enable automatic weekly report deliveries.")
- 
