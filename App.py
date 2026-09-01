@@ -11,12 +11,13 @@ st.set_page_config(page_title="Hybrid Theory - 28 Day Challenge", page_icon="�
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling
+# Custom Styling (Enhanced Main Title Hierarchy & Smaller Subsections)
 st.markdown("""
     <style>
-    .main-title { font-size: 34px; font-weight: bold; color: #2E4053; text-align: center; margin-bottom: 0px; }
-    .sub-title { font-size: 20px; font-weight: 600; color: #566573; text-align: center; margin-top: 2px; margin-bottom: 6px; }
-    .subtitle { font-size: 14px; color: #7F8C8D; text-align: center; margin-bottom: 20px; }
+    .main-title { font-size: 42px; font-weight: 800; color: #2E4053; text-align: center; margin-bottom: 0px; line-height: 1.1; }
+    .sub-title { font-size: 22px; font-weight: 700; color: #566573; text-align: center; margin-top: 4px; margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: #7F8C8D; text-align: center; margin-bottom: 25px; }
+    .section-header { font-size: 16px; font-weight: 600; color: #34495E; margin-top: 15px; margin-bottom: 8px; }
     .alert-box { background-color: #FADBD8; padding: 12px; border-radius: 8px; color: #922B21; font-weight: bold; margin-bottom: 10px; }
     .success-box { background-color: #D4EFDF; padding: 12px; border-radius: 8px; color: #145A32; font-weight: bold; }
     .activity-card { background-color: #F8F9F9; padding: 10px; border-left: 4px solid #3366CC; border-radius: 4px; margin-bottom: 8px; font-size: 13px; }
@@ -63,7 +64,7 @@ def save_data(data):
 if "app_data" not in st.session_state:
     st.session_state.app_data = load_data()
 
-# Updated Habit definitions with the revised step goal wording
+# Updated Habit definitions
 habits_info = {
     "habit_1": ("1. Daily H2O", "💧 **Guideline:** Drink between 6 to 8 glasses of water a day."),
     "habit_2": ("2. Clean Fuel (1,500 Cal)", "🥗 **Guideline:** Stick to the high-volume 1500-calorie clean meal structure (gluten-free, lactose-free, sugar-free)."),
@@ -186,7 +187,7 @@ if view_mode == "Daily Logger":
             missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
             st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: <b>{missed_str}</b>. Focus on breaking this streak!</p>', unsafe_allow_html=True)
 
-    st.write(f"### 📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')})")
+    st.markdown(f'<p class="section-header">📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')})</p>', unsafe_allow_html=True)
     
     if compare_profile != "None":
         cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
@@ -195,13 +196,13 @@ if view_mode == "Daily Logger":
         col_left, col_right = st.columns(2)
         
         with col_left:
-            st.markdown(f"#### 👤 {my_profile} (You)")
+            st.markdown(f"**👤 {my_profile} (You)**")
             for i in range(1, 11):
                 h_key = f"habit_{i}"
                 day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
         
         with col_right:
-            st.markdown(f"#### 👥 {compare_profile} (Comparison)")
+            st.markdown(f"**👥 {compare_profile} (Comparison)**")
             for i in range(1, 11):
                 h_key = f"habit_{i}"
                 st.checkbox(habits_info[h_key][0], value=cmp_day_state.get(h_key, False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_{h_key}")
@@ -269,7 +270,7 @@ if view_mode == "Daily Logger":
 
     total_cumulative = calculate_total(my_profile)
     st.write("---")
-    st.subheader(f"🏆 Milestone Rewards Status ({my_profile})")
+    st.markdown(f'<p class="section-header">🏆 Milestone Rewards Status ({my_profile})</p>', unsafe_allow_html=True)
     st.write(f"**Total Cumulative Points:** {total_cumulative} / 280")
     
     if total_cumulative >= 280:
