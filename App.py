@@ -3,6 +3,10 @@ import pandas as pd
 import json
 import os
 import datetime
+
+# Fix for matplotlib backend in cloud environments
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # Page Configuration
@@ -27,9 +31,12 @@ DATA_FILE = "challenge_data_v4.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    
+        try:
+            with open(DATA_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass # If file is corrupted, fall back to default structure
+            
     default_structure = {
         "start_date": "2026-09-01",
         "contestants": {
@@ -48,8 +55,11 @@ def load_data():
     return default_structure
 
 def save_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    try:
+        with open(DATA_FILE, "w") as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        st.error(f"Error saving data: {e}")
 
 if "app_data" not in st.session_state:
     st.session_state.app_data = load_data()
@@ -71,7 +81,11 @@ habits_info = {
 # --- SIDEBAR: CHALLENGE & CONTESTANT MANAGEMENT ---
 st.sidebar.subheader("📅 Challenge Calendar Sync")
 current_start_str = st.session_state.app_data.get("start_date", "2026-09-01")
-parsed_start_date = datetime.date.fromisoformat(current_start_str)
+try:
+    parsed_start_date = datetime.date.fromisoformat(current_start_str)
+except ValueError:
+    parsed_start_date = datetime.date(2026, 9, 1)
+
 selected_start_date = st.sidebar.date_input("Challenge Start Date", value=parsed_start_date)
 st.session_state.app_data["start_date"] = selected_start_date.isoformat()
 
@@ -82,7 +96,7 @@ contestant_names = list(st.session_state.app_data["contestants"].keys())
 
 # Add new contestant
 if len(contestant_names) < 10:
-    new_name = st.sidebar.text_input("Add New Contestant Name")
+    new_name = st.sidebar.text_input("Add New Contestant Name", key="new_contestant_input")
     if st.sidebar.button("Add Contestant") and new_name:
         if new_name in contestant_names:
             st.sidebar.error("Contestant name already exists!")
@@ -244,13 +258,11 @@ elif view_mode == "Analytics & Line Graph":
     st.subheader("📈 Cumulative Progress Over Time")
     st.write("Compare everyone's ongoing trajectory across the 28 days with overlapping line charts:")
     
-    # Build a DataFrame for all contestants' cumulative totals per day
     chart_data = {}
     for day in range(1, 29):
         d_str = str(day)
         row_data = {}
         for name, data in st.session_state.app_data["contestants"].items():
-            # calculate cumulative up to this day
             running_total = 0
             for d_sub in range(1, day + 1):
                 sub_str = str(d_sub)
@@ -262,7 +274,6 @@ elif view_mode == "Analytics & Line Graph":
 
     df_chart = pd.DataFrame(chart_data).T
     
-    # Matplotlib Overlapping Line Graph
     fig, ax = plt.subplots(figsize=(10, 5))
     for name, data in st.session_state.app_data["contestants"].items():
         color = data.get("color", "#008080")
@@ -277,6 +288,7 @@ elif view_mode == "Analytics & Line Graph":
     plt.tight_layout()
     
     st.pyplot(fig)
+    plt.close(fig)
 
 else:
     st.subheader("📊 Group Leaderboard & Weekly Reports")
@@ -333,3 +345,4 @@ else:
             st.info(f"📬 In a fully hosted deployment, this formatted report would automatically be dispatched to **{rep_email}** every week!")
         else:
             st.warning("⚠️ Enter your email address in the Daily Logger view to enable automatic weekly report deliveries.")
+ 
