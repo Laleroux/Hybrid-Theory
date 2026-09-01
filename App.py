@@ -11,19 +11,19 @@ st.set_page_config(page_title="Hybrid Theory - 28 Day Challenge", page_icon="�
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling for Large, Eye-Catching Header
+# Custom Styling for Slimmer, Burnt Orange Header Banner
 st.markdown("""
     <style>
     .header-container {
-        background: linear-gradient(135deg, #1B2631, #34495E);
-        padding: 35px 20px;
-        border-radius: 12px;
+        background: linear-gradient(135deg, #D35400, #BA4A00);
+        padding: 20px 15px;
+        border-radius: 10px;
         text-align: center;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        margin-bottom: 20px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
     }
     .main-title-custom {
-        font-size: 58px;
+        font-size: 52px;
         font-weight: 800;
         color: #FFFFFF !important;
         margin: 0;
@@ -31,16 +31,16 @@ st.markdown("""
         letter-spacing: 1px;
     }
     .sub-title-custom {
-        font-size: 34px;
+        font-size: 30px;
         font-weight: 600;
         color: #D5D8DC !important;
-        margin-top: 10px;
+        margin-top: 8px;
         margin-bottom: 0;
     }
     .tagline-custom {
-        font-size: 14px;
-        color: #A6ACAF !important;
-        margin-top: 12px;
+        font-size: 13px;
+        color: #FAD7A0 !important;
+        margin-top: 8px;
         margin-bottom: 0;
         letter-spacing: 0.5px;
     }
@@ -173,6 +173,27 @@ if view_mode == "Daily Logger":
     my_profile = col_sel1.selectbox("Your Profile (Editable)", contestant_names, key="my_prof")
     other_choices = ["None"] + [n for n in contestant_names if n != my_profile]
     compare_profile = col_sel2.selectbox("Compare With (Side-by-Side)", other_choices, key="cmp_prof")
+    
+    # --- RANKING RIBBON / MEDAL DISPLAY ---
+    all_totals = {name: calculate_total(name) for name in contestant_names}
+    sorted_rankings = sorted(all_totals.items(), key=lambda x: x[1], reverse=True)
+    
+    user_rank = 1
+    for idx, (c_name, _) in enumerate(sorted_rankings):
+        if c_name == my_profile:
+            user_rank = idx + 1
+            break
+            
+    my_score = all_totals[my_profile]
+    
+    if user_rank == 1:
+        st.success(f"🏆 **1st Place Ribbon!** You are leading the pack with **{my_score} points**! Keep up the incredible consistency!")
+    elif user_rank == 2:
+        st.info(f"🥈 **2nd Place Medal!** You're sitting strong at **{my_score} points**—just a stone's throw away from the top spot!")
+    elif user_rank == 3:
+        st.warning(f"🥉 **3rd Place Medal!** You have **{my_score} points**. Push hard to climb the ranks!")
+    else:
+        st.markdown(f"🏅 **Rank #{user_rank}** — You have **{my_score} points**. Keep checking off those daily habits to close the gap!")
     
     c_data_profile = st.session_state.app_data["contestants"][my_profile]
     user_email = st.text_input(f"📧 Email Address for Weekly Reports ({my_profile})", value=c_data_profile.get("email", ""))
