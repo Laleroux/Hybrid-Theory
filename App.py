@@ -11,16 +11,16 @@ st.set_page_config(page_title="Hybrid Theory - 28 Day Challenge", page_icon="ðŸŒ
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling for Slimmer, Burnt Orange Header Banner
+# Custom Styling for Slimmer, Flame-Themed Header Banner
 st.markdown("""
     <style>
     .header-container {
-        background: linear-gradient(135deg, #D35400, #BA4A00);
+        background: linear-gradient(135deg, #C0392B, #D35400, #F39C12);
         padding: 20px 15px;
         border-radius: 10px;
         text-align: center;
         margin-bottom: 20px;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
     }
     .main-title-custom {
         font-size: 52px;
@@ -33,13 +33,13 @@ st.markdown("""
     .sub-title-custom {
         font-size: 30px;
         font-weight: 600;
-        color: #D5D8DC !important;
+        color: #FAD7A0 !important;
         margin-top: 8px;
         margin-bottom: 0;
     }
     .tagline-custom {
         font-size: 13px;
-        color: #FAD7A0 !important;
+        color: #FEF9E7 !important;
         margin-top: 8px;
         margin-bottom: 0;
         letter-spacing: 0.5px;
