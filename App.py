@@ -81,37 +81,37 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Data Persistence File
-DATA_FILE = "challenge_data_v11.json"
+DATA_FILE = "challenge_data_v13.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
-                if "contestants" in data:
+                if "gladiators" in data:
                     default_colors = ["#1B4F72", "#117A65", "#B7950B", "#7D3C98", "#2E4053", "#1B3136", "#884EA0", "#1E8449", "#2471A3", "#A04000"]
-                    for idx, (name, c_info) in enumerate(data["contestants"].items()):
-                        if "color" not in c_info:
-                            c_info["color"] = default_colors[idx % len(default_colors)]
-                        if "vetoed_habit" not in c_info:
-                            c_info["vetoed_habit"] = None # e.g. "habit_4"
-                        if "custom_replacement" not in c_info:
-                            c_info["custom_replacement"] = {"title": "", "guideline": ""}
+                    for idx, (name, g_info) in enumerate(data["gladiators"].items()):
+                        if "color" not in g_info:
+                            g_info["color"] = default_colors[idx % len(default_colors)]
+                        if "vetoed_habit" not in g_info:
+                            g_info["vetoed_habit"] = None
+                        if "custom_replacement" not in g_info:
+                            g_info["custom_replacement"] = {"title": "", "guideline": ""}
                 return data
         except Exception:
             pass
     
     default_structure = {
         "start_date": "2026-09-01",
-        "contestants": {
-            "Contestant 1": {
+        "gladiators": {
+            "Gladiator 1": {
                 "email": "", 
                 "color": "#1B4F72", 
                 "vetoed_habit": None,
                 "custom_replacement": {"title": "", "guideline": ""},
                 "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {f"bonus_{i}": False for i in range(1, 6)} | {"notes": "", "photo": ""} for day in range(1, 29)}
             },
-            "Contestant 2": {
+            "Gladiator 2": {
                 "email": "", 
                 "color": "#117A65", 
                 "vetoed_habit": None,
@@ -154,7 +154,7 @@ bonus_info = {
     "bonus_5": ("🔥 Saturday Parkrun Bonus (+5 pts)", "🏃‍♂️ Completed your Saturday 5km Parkrun event.")
 }
 
-# --- SIDEBAR: CHALLENGE & CONTESTANT MANAGEMENT ---
+# --- SIDEBAR: CHALLENGE & GLADIATOR MANAGEMENT ---
 st.sidebar.subheader("📅 Challenge Calendar Sync")
 current_start_str = st.session_state.app_data.get("start_date", "2026-09-01")
 try:
@@ -166,20 +166,20 @@ selected_start_date = st.sidebar.date_input("Challenge Start Date", value=parsed
 st.session_state.app_data["start_date"] = selected_start_date.isoformat()
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("👥 Contestants Management")
+st.sidebar.subheader("⚔️ Gladiators Management")
 
-contestant_names = list(st.session_state.app_data["contestants"].keys())
+gladiator_names = list(st.session_state.app_data["gladiators"].keys())
 
-# Add New Contestant
-if len(contestant_names) < 10:
-    new_name = st.sidebar.text_input("Add New Contestant Name")
-    if st.sidebar.button("Add Contestant") and new_name:
-        if new_name in contestant_names:
-            st.sidebar.error("Contestant name already exists!")
+# Add New Gladiator
+if len(gladiator_names) < 10:
+    new_name = st.sidebar.text_input("Add New Gladiator Name")
+    if st.sidebar.button("Add Gladiator") and new_name:
+        if new_name in gladiator_names:
+            st.sidebar.error("Gladiator name already exists!")
         else:
             default_colors = ["#1B4F72", "#117A65", "#B7950B", "#7D3C98", "#2E4053", "#1B3136", "#884EA0", "#1E8449", "#2471A3", "#A04000"]
-            assigned_color = default_colors[len(contestant_names) % len(default_colors)]
-            st.session_state.app_data["contestants"][new_name] = {
+            assigned_color = default_colors[len(gladiator_names) % len(default_colors)]
+            st.session_state.app_data["gladiators"][new_name] = {
                 "email": "",
                 "color": assigned_color,
                 "vetoed_habit": None,
@@ -189,97 +189,95 @@ if len(contestant_names) < 10:
             save_data(st.session_state.app_data)
             st.rerun()
 
-# Edit Existing Contestant Name
-if len(contestant_names) > 0:
-    with st.sidebar.expander("✏️ Rename Contestant"):
-        target_to_rename = st.selectbox("Select Contestant to Rename", contestant_names, key="rename_select")
+# Edit Existing Gladiator Name
+if len(gladiator_names) > 0:
+    with st.sidebar.expander("✏️ Rename Gladiator"):
+        target_to_rename = st.selectbox("Select Gladiator to Rename", gladiator_names, key="rename_select")
         new_entered_name = st.text_input("New Name", value=target_to_rename, key="rename_input")
         if st.button("Save New Name"):
             if not new_entered_name.strip():
                 st.sidebar.error("Name cannot be empty!")
-            elif new_entered_name in contestant_names and new_entered_name != target_to_rename:
+            elif new_entered_name in gladiator_names and new_entered_name != target_to_rename:
                 st.sidebar.error("That name already exists!")
             else:
-                updated_contestants = {}
-                for name, info in st.session_state.app_data["contestants"].items():
+                updated_gladiators = {}
+                for name, info in st.session_state.app_data["gladiators"].items():
                     if name == target_to_rename:
-                        updated_contestants[new_entered_name] = info
+                        updated_gladiators[new_entered_name] = info
                     else:
-                        updated_contestants[name] = info
-                st.session_state.app_data["contestants"] = updated_contestants
+                        updated_gladiators[name] = info
+                st.session_state.app_data["gladiators"] = updated_gladiators
                 save_data(st.session_state.app_data)
                 st.success(f"Renamed {target_to_rename} to {new_entered_name}!")
                 st.rerun()
 
-# Habit Veto & Custom Replacement (1 per contestant)
-if len(contestant_names) > 0:
-    with st.sidebar.expander("🚫 Veto Habit & Replace (1 per Contestant)"):
-        target_v_contestant = st.selectbox("Select Contestant", contestant_names, key="v_contestant_select")
-        v_c_info = st.session_state.app_data["contestants"][target_v_contestant]
+# Habit Veto & Custom Replacement (1 per gladiator)
+if len(gladiator_names) > 0:
+    with st.sidebar.expander("🚫 Veto Habit & Replace (1 per Gladiator)"):
+        target_v_gladiator = st.selectbox("Select Gladiator", gladiator_names, key="v_gladiator_select")
+        v_g_info = st.session_state.app_data["gladiators"][target_v_gladiator]
         
-        current_vetoed = v_c_info.get("vetoed_habit", None)
+        current_vetoed = v_g_info.get("vetoed_habit", None)
         habit_options_labels = {k: v[0] for k, v in habits_info.items()}
         habit_keys_list = list(habits_info.keys())
         
-        default_index = habit_keys_list.index(current_vetoed) if current_vetoed in habit_keys_list else 0
-        
         veto_choice = st.selectbox("Select Core Habit to Veto (or None)", ["None"] + habit_keys_list, format_func=lambda x: "No Veto (Keep Standard 10)" if x == "None" else habit_options_labels[x], key="veto_dropdown")
         
-        existing_rep = v_c_info.get("custom_replacement", {"title": "", "guideline": ""})
+        existing_rep = v_g_info.get("custom_replacement", {"title": "", "guideline": ""})
         
         if veto_choice != "None":
             rep_title_input = st.text_input("Replacement Habit Name (e.g., 5km Cycling Daily)", value=existing_rep.get("title", ""))
             rep_guide_input = st.text_area("Replacement Rule / Guideline", value=existing_rep.get("guideline", ""))
             
             if st.button("Save Veto & Replacement"):
-                v_c_info["vetoed_habit"] = veto_choice
-                v_c_info["custom_replacement"] = {
+                v_g_info["vetoed_habit"] = veto_choice
+                v_g_info["custom_replacement"] = {
                     "title": rep_title_input.strip(),
                     "guideline": rep_guide_input.strip()
                 }
                 save_data(st.session_state.app_data)
-                st.success(f"Habit veto updated for {target_v_contestant}!")
+                st.success(f"Habit veto updated for {target_v_gladiator}!")
                 st.rerun()
         else:
             if st.button("Clear Veto & Reset to Standard 10"):
-                v_c_info["vetoed_habit"] = None
-                v_c_info["custom_replacement"] = {"title": "", "guideline": ""}
+                v_g_info["vetoed_habit"] = None
+                v_g_info["custom_replacement"] = {"title": "", "guideline": ""}
                 save_data(st.session_state.app_data)
-                st.success(f"Veto cleared for {target_v_contestant}!")
+                st.success(f"Veto cleared for {target_v_gladiator}!")
                 st.rerun()
 
-# Remove Contestant
-if len(contestant_names) > 1:
-    with st.sidebar.expander("🗑️ Remove Contestant"):
-        target_to_remove = st.selectbox("Select to Remove", ["None"] + contestant_names, key="remove_select")
-        if target_to_remove != "None" and st.button("Remove Contestant"):
-            del st.session_state.app_data["contestants"][target_to_remove]
+# Remove Gladiator
+if len(gladiator_names) > 1:
+    with st.sidebar.expander("🗑️ Remove Gladiator"):
+        target_to_remove = st.selectbox("Select to Remove", ["None"] + gladiator_names, key="remove_select")
+        if target_to_remove != "None" and st.button("Remove Gladiator"):
+            del st.session_state.app_data["gladiators"][target_to_remove]
             save_data(st.session_state.app_data)
             st.rerun()
 
-contestant_names = list(st.session_state.app_data["contestants"].keys())
+gladiator_names = list(st.session_state.app_data["gladiators"].keys())
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🎨 Contestant Line Colors")
+st.sidebar.subheader("🎨 Gladiator Line Colors")
 st.sidebar.caption("Curated complementary tones matching fiery orange.")
-for name in contestant_names:
-    c_info = st.session_state.app_data["contestants"][name]
-    current_color = c_info.get("color", "#1B4F72")
+for name in gladiator_names:
+    g_info = st.session_state.app_data["gladiators"][name]
+    current_color = g_info.get("color", "#1B4F72")
     new_color = st.sidebar.color_picker(f"{name} Color", value=current_color, key=f"color_{name}")
-    c_info["color"] = new_color
+    g_info["color"] = new_color
 save_data(st.session_state.app_data)
 
 st.sidebar.markdown("---")
 view_mode = st.sidebar.radio("Navigation", ["Daily Logger", "28-Day Overview Grid", "Rules & Guidelines", "Analytics & Graphs", "Leaderboard & Activity Feed"])
 
-def calculate_total(c_name):
+def calculate_total(g_name):
     total = 0
-    c_days = st.session_state.app_data["contestants"][c_name]["days"]
+    g_days = st.session_state.app_data["gladiators"][g_name]["days"]
     for day in range(1, 29):
         d_str = str(day)
-        core = sum(1 for i in range(1, 11) if c_days[d_str].get(f"habit_{i}", False))
-        bonus_daily = sum(1 for i in range(1, 5) if c_days[d_str].get(f"bonus_{i}", False))
-        bonus_weekly = 5 if c_days[d_str].get("bonus_5", False) else 0
+        core = sum(1 for i in range(1, 11) if g_days[d_str].get(f"habit_{i}", False))
+        bonus_daily = sum(1 for i in range(1, 5) if g_days[d_str].get(f"bonus_{i}", False))
+        bonus_weekly = 5 if g_days[d_str].get("bonus_5", False) else 0
         total += (core + bonus_daily + bonus_weekly)
     return total
 
@@ -288,17 +286,17 @@ day_date_map = {day: start_dt + datetime.timedelta(days=day-1) for day in range(
 
 if view_mode == "Daily Logger":
     col_sel1, col_sel2 = st.columns(2)
-    my_profile = col_sel1.selectbox("Your Profile (Editable)", contestant_names, key="my_prof")
-    other_choices = ["None"] + [n for n in contestant_names if n != my_profile]
+    my_profile = col_sel1.selectbox("Your Profile (Editable)", gladiator_names, key="my_prof")
+    other_choices = ["None"] + [n for n in gladiator_names if n != my_profile]
     compare_profile = col_sel2.selectbox("Compare With (Side-by-Side)", other_choices, key="cmp_prof")
     
     # --- RANKING RIBBON / MEDAL DISPLAY ---
-    all_totals = {name: calculate_total(name) for name in contestant_names}
+    all_totals = {name: calculate_total(name) for name in gladiator_names}
     sorted_rankings = sorted(all_totals.items(), key=lambda x: x[1], reverse=True)
     
     user_rank = 1
-    for idx, (c_name, _) in enumerate(sorted_rankings):
-        if c_name == my_profile:
+    for idx, (g_name, _) in enumerate(sorted_rankings):
+        if g_name == my_profile:
             user_rank = idx + 1
             break
             
@@ -313,9 +311,9 @@ if view_mode == "Daily Logger":
     else:
         st.markdown(f"🏅 **Rank #{user_rank}** — You have **{my_score} points**. Keep checking off those daily habits to close the gap!")
     
-    c_data_profile = st.session_state.app_data["contestants"][my_profile]
-    user_email = st.text_input(f"📧 Email Address for Weekly Reports ({my_profile})", value=c_data_profile.get("email", ""))
-    c_data_profile["email"] = user_email
+    g_data_profile = st.session_state.app_data["gladiators"][my_profile]
+    user_email = st.text_input(f"📧 Email Address for Weekly Reports ({my_profile})", value=g_data_profile.get("email", ""))
+    g_data_profile["email"] = user_email
     
     selected_day = st.selectbox(
         "Select Day to Log", 
@@ -324,7 +322,7 @@ if view_mode == "Daily Logger":
     )
     
     day_str = str(selected_day)
-    day_state = c_data_profile["days"][day_str]
+    day_state = g_data_profile["days"][day_str]
     current_day_date = day_date_map[selected_day]
     is_saturday = (current_day_date.weekday() == 5)
     
@@ -341,16 +339,16 @@ if view_mode == "Daily Logger":
 
     if selected_day > 1:
         prev_day_str = str(selected_day - 1)
-        prev_core = sum(1 for i in range(1, 11) if c_data_profile["days"][prev_day_str].get(f"habit_{i}", False))
+        prev_core = sum(1 for i in range(1, 11) if g_data_profile["days"][prev_day_str].get(f"habit_{i}", False))
         if core_total < 7 and prev_core < 7:
             st.error('🚨 "Never Miss Twice" Alert: Your core score has dropped below 7 for two consecutive days. Time for a quick bounce-back!')
 
     if selected_day > 1:
         prev_day_str = str(selected_day - 1)
-        prev_day_data = c_data_profile["days"][prev_day_str]
+        prev_day_data = g_data_profile["days"][prev_day_str]
         missed_twice_list = []
-        vetoed = c_data_profile.get("vetoed_habit", None)
-        custom_rep = c_data_profile.get("custom_replacement", {"title": ""})
+        vetoed = g_data_profile.get("vetoed_habit", None)
+        custom_rep = g_data_profile.get("custom_replacement", {"title": ""})
         
         for i in range(1, 11):
             h_key = f"habit_{i}"
@@ -368,11 +366,11 @@ if view_mode == "Daily Logger":
 
     st.subheader(f"📝 Check-in for Day {selected_day} ({current_day_date.strftime('%A, %d %B %Y')})")
     
-    my_veto = c_data_profile.get("vetoed_habit", None)
-    my_rep = c_data_profile.get("custom_replacement", {"title": "", "guideline": ""})
+    my_veto = g_data_profile.get("vetoed_habit", None)
+    my_rep = g_data_profile.get("custom_replacement", {"title": "", "guideline": ""})
 
     if compare_profile != "None":
-        cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
+        cmp_data_profile = st.session_state.app_data["gladiators"][compare_profile]
         cmp_day_state = cmp_data_profile["days"][day_str]
         cmp_veto = cmp_data_profile.get("vetoed_habit", None)
         cmp_rep = cmp_data_profile.get("custom_replacement", {"title": "", "guideline": ""})
@@ -527,17 +525,17 @@ if view_mode == "Daily Logger":
 
 elif view_mode == "28-Day Overview Grid":
     st.subheader("📊 28-Day Summary Grid")
-    current_profile = st.selectbox("Select Profile for Grid", contestant_names)
+    current_profile = st.selectbox("Select Profile for Grid", gladiator_names)
     
     grid_data = []
-    c_days = st.session_state.app_data["contestants"][current_profile]["days"]
+    g_days = st.session_state.app_data["gladiators"][current_profile]["days"]
     for day in range(1, 29):
         d_str = str(day)
-        core = sum(1 for i in range(1, 11) if c_days[d_str].get(f"habit_{i}", False))
-        bonus_daily = sum(1 for i in range(1, 5) if c_days[d_str].get(f"bonus_{i}", False))
-        bonus_weekly = 5 if c_days[d_str].get("bonus_5", False) else 0
-        notes = c_days[d_str].get("notes", "")
-        photo_status = "📷 Attached" if c_days[d_str].get("photo") else "—"
+        core = sum(1 for i in range(1, 11) if g_days[d_str].get(f"habit_{i}", False))
+        bonus_daily = sum(1 for i in range(1, 5) if g_days[d_str].get(f"bonus_{i}", False))
+        bonus_weekly = 5 if g_days[d_str].get("bonus_5", False) else 0
+        notes = g_days[d_str].get("notes", "")
+        photo_status = "📷 Attached" if g_days[d_str].get("photo") else "—"
         grid_data.append({
             "Day": f"Day {day}",
             "Date": day_date_map[day].strftime('%d %b %Y'),
@@ -560,11 +558,11 @@ elif view_mode == "Rules & Guidelines":
         st.markdown(f"> {desc}")
         st.markdown("")
         
-    st.markdown("### 🚫 Contestants' Vetoed Habits & Custom Replacements")
+    st.markdown("### 🚫 Gladiators' Vetoed Habits & Custom Replacements")
     any_vetoes = False
-    for name, c_info in st.session_state.app_data["contestants"].items():
-        vetoed = c_info.get("vetoed_habit", None)
-        rep = c_info.get("custom_replacement", {"title": "", "guideline": ""})
+    for name, g_info in st.session_state.app_data["gladiators"].items():
+        vetoed = g_info.get("vetoed_habit", None)
+        rep = g_info.get("custom_replacement", {"title": "", "guideline": ""})
         if vetoed and rep.get("title"):
             any_vetoes = True
             original_habit_name = habits_info[vetoed][0]
@@ -574,7 +572,7 @@ elif view_mode == "Rules & Guidelines":
             st.markdown(f"> **Guideline:** {rep.get('guideline', 'No guideline provided.')}")
             st.markdown("")
     if not any_vetoes:
-        st.info("No habit vetoes have been configured yet. Use the sidebar to veto and replace a core habit for any contestant!")
+        st.info("No habit vetoes have been configured yet. Use the sidebar to veto and replace a core habit for any gladiator!")
 
     st.markdown("---")
     st.markdown("### 🔥 Bonus Points Guidelines")
@@ -593,37 +591,37 @@ elif view_mode == "Rules & Guidelines":
     st.markdown("- **280 Points:** Level 3 Unlocked — *Full Transformation Grand Reward*")
 
 elif view_mode == "Analytics & Graphs":
-    st.subheader("📈 Contestants Cumulative Progress Line Graph")
-    st.markdown("Compare the performance and trajectory of all contestants across the 28-day challenge.")
+    st.subheader("📈 Gladiators Cumulative Progress Line Graph")
+    st.markdown("Compare the performance and trajectory of all gladiators across the 28-day challenge.")
     
     chart_data = []
-    contestants_dict = st.session_state.app_data["contestants"]
+    gladiators_dict = st.session_state.app_data["gladiators"]
     
-    for name, c_info in contestants_dict.items():
+    for name, g_info in gladiators_dict.items():
         running_total = 0
-        c_days = c_info["days"]
+        g_days = g_info["days"]
         for day in range(1, 29):
             d_str = str(day)
-            core = sum(1 for i in range(1, 11) if c_days[d_str].get(f"habit_{i}", False))
-            bonus_daily = sum(1 for i in range(1, 5) if c_days[d_str].get(f"bonus_{i}", False))
-            bonus_weekly = 5 if c_days[d_str].get("bonus_5", False) else 0
+            core = sum(1 for i in range(1, 11) if g_days[d_str].get(f"habit_{i}", False))
+            bonus_daily = sum(1 for i in range(1, 5) if g_days[d_str].get(f"bonus_{i}", False))
+            bonus_weekly = 5 if g_days[d_str].get("bonus_5", False) else 0
             running_total += (core + bonus_daily + bonus_weekly)
             chart_data.append({
                 "Day": day,
-                "Contestant": name,
+                "Gladiator": name,
                 "Cumulative Points": running_total
             })
             
     df_chart = pd.DataFrame(chart_data)
     
-    color_domain = list(contestants_dict.keys())
-    color_range = [contestants_dict[name].get("color", "#1B4F72") for name in color_domain]
+    color_domain = list(gladiators_dict.keys())
+    color_range = [gladiators_dict[name].get("color", "#1B4F72") for name in color_domain]
     
     line_chart = alt.Chart(df_chart).mark_line(point=True, strokeWidth=3).encode(
         x=alt.X('Day:Q', title='Day of Challenge'),
         y=alt.Y('Cumulative Points:Q', title='Cumulative Points'),
-        color=alt.Color('Contestant:N', scale=alt.Scale(domain=color_domain, range=color_range), title='Contestant'),
-        tooltip=['Contestant', 'Day', 'Cumulative Points']
+        color=alt.Color('Gladiator:N', scale=alt.Scale(domain=color_domain, range=color_range), title='Gladiator'),
+        tooltip=['Gladiator', 'Day', 'Cumulative Points']
     ).properties(
         width=700,
         height=400
@@ -637,13 +635,9 @@ elif view_mode == "Analytics & Graphs":
     habit_summary = []
     for h_key, (h_title, _) in habits_info.items():
         completed_count = 0
-        for name, c_info in contestants_dict.items():
-            vetoed = c_info.get("vetoed_habit", None)
-            rep = c_info.get("custom_replacement", {"title": ""})
-            
-            # If this habit is vetoed for this contestant, count completions under replacement if applicable
+        for name, g_info in gladiators_dict.items():
             for day in range(1, 29):
-                if c_info["days"][str(day)].get(h_key, False):
+                if g_info["days"][str(day)].get(h_key, False):
                     completed_count += 1
         
         display_label = h_title.split(". ")[1]
@@ -654,7 +648,7 @@ elif view_mode == "Analytics & Graphs":
         
     df_habits = pd.DataFrame(habit_summary)
     habit_chart = alt.Chart(df_habits).mark_bar(color="#D35400").encode(
-        x=alt.X('Completions:Q', title='Total Check-ins Across All Contestants & Days'),
+        x=alt.X('Completions:Q', title='Total Check-ins Across All Gladiators & Days'),
         y=alt.Y('Habit:N', sort='-x', title='Habit'),
         tooltip=['Habit', 'Completions']
     ).properties(
@@ -666,11 +660,11 @@ elif view_mode == "Analytics & Graphs":
 else:
     st.subheader("📊 Group Leaderboard & Live Activity Feed")
     
-    contestant_totals = {name: calculate_total(name) for name in contestant_names}
-    combined_total = sum(contestant_totals.values())
+    gladiator_totals = {name: calculate_total(name) for name in gladiator_names}
+    combined_total = sum(gladiator_totals.values())
     
-    cols = st.columns(len(contestant_names) if len(contestant_names) <= 3 else 3)
-    for idx, (name, pts) in enumerate(contestant_totals.items()):
+    cols = st.columns(len(gladiator_names) if len(gladiator_names) <= 3 else 3)
+    for idx, (name, pts) in enumerate(gladiator_totals.items()):
         col_idx = idx % 3
         cols[col_idx].metric(name, f"{pts} pts")
     
@@ -689,10 +683,10 @@ else:
     st.subheader("⚡ Live Group Activity Feed")
     
     activity_stream = []
-    for name, c_info in st.session_state.app_data["contestants"].items():
+    for name, g_info in st.session_state.app_data["gladiators"].items():
         for day in range(1, 29):
             d_str = str(day)
-            d_data = c_info["days"][d_str]
+            d_data = g_info["days"][d_str]
             core = sum(1 for i in range(1, 11) if d_data.get(f"habit_{i}", False))
             bonus_daily = sum(1 for i in range(1, 5) if d_data.get(f"bonus_{i}", False))
             bonus_weekly = 5 if d_data.get("bonus_5", False) else 0
@@ -700,7 +694,7 @@ else:
             if total_score > 0:
                 activity_stream.append({
                     "day": day,
-                    "contestant": name,
+                    "gladiator": name,
                     "score": total_score,
                     "notes": d_data.get("notes", "")
                 })
@@ -710,14 +704,14 @@ else:
     if activity_stream:
         for act in activity_stream[:8]:
             note_text = f' — "{act["notes"]}"' if act["notes"] else ""
-            st.info(f"**{act['contestant']}** checked in for Day {act['day']} with **{act['score']} points**{note_text}")
+            st.info(f"**{act['gladiator']}** checked in for Day {act['day']} with **{act['score']} points**{note_text}")
     else:
         st.info("No activity recorded yet. Start logging your daily habits to populate the live feed!")
 
     st.write("---")
     st.subheader("📧 Weekly Habit Performance Report Simulator")
-    report_profile = st.selectbox("Select Profile for Report", contestant_names, key="rep_profile")
-    rep_data = st.session_state.app_data["contestants"][report_profile]
+    report_profile = st.selectbox("Select Profile for Report", gladiator_names, key="rep_profile")
+    rep_data = st.session_state.app_data["gladiators"][report_profile]
     rep_email = rep_data.get("email", "")
     rep_veto = rep_data.get("vetoed_habit", None)
     rep_rep = rep_data.get("custom_replacement", {"title": ""})
