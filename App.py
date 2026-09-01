@@ -76,7 +76,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- DATABASE SETUP (Cloud-Compatible SQLite / Swappable to Supabase) ---
+# --- DATABASE SETUP ---
 DB_FILE = "hybrid_theory_cloud.db"
 
 def init_db():
@@ -167,7 +167,7 @@ bonus_info = {
     "bonus_5": ("🔥 Saturday Parkrun Bonus (+5 pts)", "🏃‍♂️ Completed your Saturday 5km Parkrun event.")
 }
 
-# --- SIDEBAR: ROLE PROTECTION & MANAGEMENT ---
+# --- SIDEBAR: ROLE PROTECTION & NAVIGATION ---
 st.sidebar.subheader("🔒 Access & Security")
 is_admin = st.sidebar.checkbox("Developer / Admin Mode", value=False)
 
@@ -200,7 +200,6 @@ st.sidebar.subheader("⚔️ Gladiators Management")
 gladiator_names = list(st.session_state.app_data["gladiators"].keys())
 
 if is_admin:
-    # Add New Gladiator (Admin only)
     if len(gladiator_names) < 10:
         new_name = st.sidebar.text_input("Add New Gladiator Name")
         if st.sidebar.button("Add Gladiator") and new_name:
@@ -219,7 +218,6 @@ if is_admin:
                 save_data(st.session_state.app_data)
                 st.rerun()
 
-    # Remove Gladiator (Admin only)
     if len(gladiator_names) > 1:
         with st.sidebar.expander("🗑️ Remove Gladiator"):
             target_to_remove = st.selectbox("Select to Remove", ["None"] + gladiator_names, key="remove_select")
@@ -241,7 +239,8 @@ if is_admin:
     save_data(st.session_state.app_data)
 
 st.sidebar.markdown("---")
-view_mode = st.sidebar.radio("Navigation", ["Daily Logger", "28-Day Overview Grid", "Rules & Guidelines", "Analytics & Graphs", "Leaderboard & Activity Feed"])
+# Added "Gladiators & Scores" tab right into the main navigation radio selector
+view_mode = st.sidebar.radio("Navigation", ["Daily Logger", "Gladiators & Scores", "28-Day Overview Grid", "Rules & Guidelines", "Analytics & Graphs", "Leaderboard & Activity Feed"])
 
 def calculate_total(g_name):
     total = 0
@@ -264,63 +263,68 @@ if view_mode == "Daily Logger":
     compare_profile = col_sel2.selectbox("Compare With (Side-by-Side)", other_choices, key="cmp_prof")
     
     # --- OPEN USER SETTINGS: RENAME & VETO CONFIGURATION FOR ANY GLADIATOR ---
-    with st.expander(f"⚙️ Profile Settings & Habit Veto ({my_profile})"):
-        st.markdown(f"**Edit Your Gladiator Name & Custom Replacements**")
+    st.markdown("---")
+    st.subheader(f"⚙️ Profile Settings & Habit Veto ({my_profile})")
+    
+    with st.container():
+        col_set1, col_set2 = st.columns(2)
         
-        # 1. Rename Gladiator
-        new_entered_name = st.text_input("Change Your Name", value=my_profile, key=f"rename_{my_profile}")
-        if new_entered_name.strip() and new_entered_name != my_profile:
-            if new_entered_name in gladiator_names:
-                st.error("That name already exists!")
-            else:
-                updated_gladiators = {}
-                for name, info in st.session_state.app_data["gladiators"].items():
-                    if name == my_profile:
-                        updated_gladiators[new_entered_name] = info
-                    else:
-                        updated_gladiators[name] = info
-                st.session_state.app_data["gladiators"] = updated_gladiators
-                save_data(st.session_state.app_data)
-                st.success(f"Successfully renamed to {new_entered_name}!")
-                st.rerun()
-
-        st.markdown("---")
-        
-        # 2. Veto Habit & Replacement
-        g_data_profile_settings = st.session_state.app_data["gladiators"][my_profile]
-        habit_options_labels = {k: v[0] for k, v in habits_info.items()}
-        habit_keys_list = list(habits_info.keys())
-        
-        veto_choice = st.selectbox(
-            "Select Core Habit to Veto (or None)", 
-            ["None"] + habit_keys_list, 
-            format_func=lambda x: "No Veto (Keep Standard 10)" if x == "None" else habit_options_labels[x], 
-            key=f"veto_dropdown_{my_profile}"
-        )
-        
-        existing_rep = g_data_profile_settings.get("custom_replacement", {"title": "", "guideline": ""})
-        
-        if veto_choice != "None":
-            rep_title_input = st.text_input("Replacement Habit Name", value=existing_rep.get("title", ""), key=f"rep_title_{my_profile}")
-            rep_guide_input = st.text_area("Replacement Rule / Guideline", value=existing_rep.get("guideline", ""), key=f"rep_guide_{my_profile}")
-            
-            if st.button("Save Veto & Replacement", key=f"save_veto_{my_profile}"):
-                g_data_profile_settings["vetoed_habit"] = veto_choice
-                g_data_profile_settings["custom_replacement"] = {
-                    "title": rep_title_input.strip(),
-                    "guideline": rep_guide_input.strip()
-                }
-                save_data(st.session_state.app_data)
-                st.success("Veto & custom replacement saved successfully!")
-                st.rerun()
-        else:
-            if g_data_profile_settings.get("vetoed_habit") is not None:
-                if st.button("Clear Veto & Reset to Standard 10", key=f"clear_veto_{my_profile}"):
-                    g_data_profile_settings["vetoed_habit"] = None
-                    g_data_profile_settings["custom_replacement"] = {"title": "", "guideline": ""}
+        with col_set1:
+            st.markdown("**1. Edit Your Name**")
+            new_entered_name = st.text_input("Change Your Display Name", value=my_profile, key=f"rename_{my_profile}")
+            if new_entered_name.strip() and new_entered_name != my_profile:
+                if new_entered_name in gladiator_names:
+                    st.error("That name already exists!")
+                else:
+                    updated_gladiators = {}
+                    for name, info in st.session_state.app_data["gladiators"].items():
+                        if name == my_profile:
+                            updated_gladiators[new_entered_name] = info
+                        else:
+                            updated_gladiators[name] = info
+                    st.session_state.app_data["gladiators"] = updated_gladiators
                     save_data(st.session_state.app_data)
-                    st.success("Veto cleared successfully!")
+                    st.success(f"Successfully renamed to {new_entered_name}!")
                     st.rerun()
+
+        with col_set2:
+            st.markdown("**2. Habit Veto & Custom Replacement**")
+            g_data_profile_settings = st.session_state.app_data["gladiators"][my_profile]
+            habit_options_labels = {k: v[0] for k, v in habits_info.items()}
+            habit_keys_list = list(habits_info.keys())
+            
+            veto_choice = st.selectbox(
+                "Select Core Habit to Veto (or None)", 
+                ["None"] + habit_keys_list, 
+                format_func=lambda x: "No Veto (Keep Standard 10)" if x == "None" else habit_options_labels[x], 
+                key=f"veto_dropdown_{my_profile}"
+            )
+            
+            existing_rep = g_data_profile_settings.get("custom_replacement", {"title": "", "guideline": ""})
+            
+            if veto_choice != "None":
+                rep_title_input = st.text_input("Replacement Habit Name", value=existing_rep.get("title", ""), key=f"rep_title_{my_profile}")
+                rep_guide_input = st.text_area("Replacement Rule / Guideline", value=existing_rep.get("guideline", ""), key=f"rep_guide_{my_profile}")
+                
+                if st.button("Save Veto & Replacement", key=f"save_veto_{my_profile}"):
+                    g_data_profile_settings["vetoed_habit"] = veto_choice
+                    g_data_profile_settings["custom_replacement"] = {
+                        "title": rep_title_input.strip(),
+                        "guideline": rep_guide_input.strip()
+                    }
+                    save_data(st.session_state.app_data)
+                    st.success("Veto & custom replacement saved successfully!")
+                    st.rerun()
+            else:
+                if g_data_profile_settings.get("vetoed_habit") is not None:
+                    if st.button("Clear Veto & Reset to Standard 10", key=f"clear_veto_{my_profile}"):
+                        g_data_profile_settings["vetoed_habit"] = None
+                        g_data_profile_settings["custom_replacement"] = {"title": "", "guideline": ""}
+                        save_data(st.session_state.app_data)
+                        st.success("Veto cleared successfully!")
+                        st.rerun()
+
+    st.markdown("---")
 
     # --- RANKING RIBBON / MEDAL DISPLAY ---
     all_totals = {name: calculate_total(name) for name in gladiator_names}
@@ -478,6 +482,34 @@ if view_mode == "Daily Logger":
     st.write("---")
     st.info(f"✨ **Day {selected_day} Score for {my_profile}:** **{daily_total} Points**")
 
+elif view_mode == "Gladiators & Scores":
+    st.subheader("⚔️ All Gladiators & Current Scores")
+    st.markdown("Here is the live roster of all contestants and their total accumulated points so far:")
+    st.markdown("---")
+    
+    # Calculate scores and sort them from highest to lowest
+    all_gladiator_scores = {name: calculate_total(name) for name in gladiator_names}
+    sorted_gladiators = sorted(all_gladiator_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    for idx, (g_name, score) in enumerate(sorted_gladiators, 1):
+        g_info = st.session_state.app_data["gladiators"][g_name]
+        g_color = g_info.get("color", "#1B4F72")
+        has_veto = "Yes (Custom Veto Active)" if g_info.get("vetoed_habit") else "None"
+        
+        # Display each gladiator in a clean card format
+        with st.container():
+            col_g1, col_g2, col_g3 = st.columns([3, 2, 2])
+            with col_g1:
+                st.markdown(f"### #{idx}. {g_name}")
+                st.markdown(f"🎨 **Color Theme:** <span style='color:{g_color}; font-weight:bold;'>■ {g_color}</span>", unsafe_allow_html=True)
+            with col_g2:
+                st.markdown(f"**Total Score:**")
+                st.markdown(f"### 🌟 {score} pts")
+            with col_g3:
+                st.markdown(f"**Vetoed Habit:**")
+                st.markdown(f"📌 {has_veto}")
+            st.markdown("---")
+
 elif view_mode == "28-Day Overview Grid":
     st.subheader("📊 28-Day Summary Grid")
     current_profile = st.selectbox("Select Profile for Grid", gladiator_names)
@@ -564,7 +596,6 @@ else:
     if st.button("📥 Generate Weekly Report Summary"):
         st.success(f"Report compiled successfully for **{report_profile}**!")
         
-        # Primary Report
         total_gained = calculate_total(report_profile)
         missed_counts = {f"habit_{i}": 0 for i in range(1, 11)}
         for day in range(1, 29):
@@ -585,7 +616,6 @@ else:
             h_label = rep_rep['title'] if h_key == rep_veto and rep_rep.get("title") else habits_info[h_key][0].split(". ")[1]
             st.write(f"{idx}. {h_label} (Missed {count} times)")
 
-        # Other Gladiators Comparison Reports
         other_gladiators = [n for n in gladiator_names if n != report_profile]
         if other_gladiators:
             st.markdown("---")
