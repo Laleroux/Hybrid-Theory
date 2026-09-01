@@ -719,6 +719,7 @@ else:
     if st.button("📥 Generate Weekly Report Summary"):
         st.success(f"Report compiled successfully for **{report_profile}** (Target Email: {rep_email if rep_email else 'No email set yet'})!")
         
+        # --- PRIMARY GLADIATOR REPORT ---
         total_gained = calculate_total(report_profile)
         
         missed_counts = {f"habit_{i}": 0 for i in range(1, 11)}
@@ -730,32 +731,56 @@ else:
                     missed_counts[h_key] += 1
                     
         st.write(f"### 📋 Performance Breakdown for {report_profile}")
-        st.write(f"- **Total Accumulated Points:** {total_gained}")
-        st.write(f"- **Challenge Start Date Synced:** {start_dt.strftime('%d %B %Y')}")
-        st.write(f"- **Areas where points were gained:** Consistent core habits, daily bonuses, and Saturday Parkruns.")
-        st.write(f"- **Habit Drop-off Areas (Most missed items across recorded days):**")
+        st.write(f"**Total Accumulated Points:** {total_gained}")
+        st.write(f"**Challenge Start Date Synced:** {start_dt.strftime('%d %B %Y')}")
+        st.write(f"**Areas where points were gained:** Consistent core habits, daily bonuses, and Saturday Parkruns.")
+        st.write(f"**Habit Drop-off Areas (Most missed items across recorded days):**")
         
         sorted_misses = sorted(missed_counts.items(), key=lambda x: x[1], reverse=True)
-        for h_key, count in sorted_misses[:3]:
+        for idx, (h_key, count) in enumerate(sorted_misses[:3], 1):
             if h_key == rep_veto and rep_rep.get("title"):
-                h_label = f"{h_key.split('_')[1]}. {rep_rep['title']}"
+                h_label = rep_rep['title']
             else:
-                h_label = habits_info[h_key][0]
-            st.write(f"  * *{h_label}* (Missed {count} times)")
+                h_label = habits_info[h_key][0].split(". ")[1]
+            st.write(f"{idx}. {h_label} (Missed {count} times)")
+
+        # --- OTHER GLADIATORS COMPARISON REPORTS ---
+        other_gladiators = [n for n in gladiator_names if n != report_profile]
+        if other_gladiators:
+            st.markdown("---")
+            st.write(f"### ⚔️ Comparison Stats for Other Gladiators")
             
-        st.markdown("---")
-        st.write(f"### ⚔️ Side-by-Side Group Standing Comparison")
-        st.markdown("Here is how all other Gladiators compare on total points for this weekly report window:")
-        
-        all_gladiator_totals = {name: calculate_total(name) for name in gladiator_names}
-        sorted_group_ranks = sorted(all_gladiator_totals.items(), key=lambda x: x[1], reverse=True)
-        
-        for r_idx, (g_name, g_pts) in enumerate(sorted_group_ranks):
-            marker = "👑 (You)" if g_name == report_profile else f"(Rank #{r_idx + 1})"
-            st.write(f"- **{g_name}**: {g_pts} total points {marker}")
+            for o_name in other_gladiators:
+                o_data = st.session_state.app_data["gladiators"][o_name]
+                o_total = calculate_total(o_name)
+                o_veto = o_data.get("vetoed_habit", None)
+                o_rep = o_data.get("custom_replacement", {"title": ""})
+                
+                o_missed_counts = {f"habit_{i}": 0 for i in range(1, 11)}
+                for day in range(1, 29):
+                    d_str = str(day)
+                    for i in range(1, 11):
+                        h_key = f"habit_{i}"
+                        if not o_data["days"][d_str].get(h_key, False):
+                            o_missed_counts[h_key] += 1
+                
+                st.write(f"#### 📋 Performance Breakdown for {o_name}")
+                st.write(f"**Total Accumulated Points:** {o_total}")
+                st.write(f"**Challenge Start Date Synced:** {start_dt.strftime('%d %B %Y')}")
+                st.write(f"**Areas where points were gained:** Consistent core habits, daily bonuses, and Saturday Parkruns.")
+                st.write(f"**Habit Drop-off Areas (Most missed items across recorded days):**")
+                
+                o_sorted_misses = sorted(o_missed_counts.items(), key=lambda x: x[1], reverse=True)
+                for idx, (h_key, count) in enumerate(o_sorted_misses[:3], 1):
+                    if h_key == o_veto and o_rep.get("title"):
+                        h_label = o_rep['title']
+                    else:
+                        h_label = habits_info[h_key][0].split(". ")[1]
+                    st.write(f"{idx}. {h_label} (Missed {count} times)")
+                st.markdown("")
 
         st.markdown("---")
         if rep_email:
-            st.info(f"📬 In a fully hosted deployment, this comprehensive formatted report (including individual breakdowns and group standings) would automatically be dispatched to **{rep_email}** every week!")
+            st.info(f"📬 In a fully hosted deployment, this comprehensive formatted report (including individual breakdowns for all Gladiators) would automatically be dispatched to **{rep_email}** every week!")
         else:
             st.warning("⚠️ Enter your email address in the Daily Logger view to enable automatic weekly report deliveries.")
