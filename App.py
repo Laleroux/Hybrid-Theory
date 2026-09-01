@@ -81,7 +81,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Data Persistence File
-DATA_FILE = "challenge_data_v7.json"
+DATA_FILE = "challenge_data_v8.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -135,7 +135,7 @@ bonus_info = {
     "bonus_2": ("🔥 Bonus: Extended Training (30–60 mins)", "💪 Exercised between 30 minutes and 1 hour today."),
     "bonus_3": ("🔥 Bonus: High Hydration (>8 glasses)", "💧 Drank more than 8 glasses of water today."),
     "bonus_4": ("🔥 Bonus: Extended Unplug (>30 mins)", "📵 Had more than 30 minutes of intentional non-screen time."),
-    "bonus_5": ("🔥 Weekly Bonus: Completed a Parkrun (+5 pts)", "🏃‍♂️ Completed your weekend 5km Parkrun event.")
+    "bonus_5": ("🔥 Weekly Parkrun Bonus (+5 pts)", "🏃‍♂️ Completed your Saturday 5km Parkrun event.")
 }
 
 # --- SIDEBAR: CHALLENGE & CONTESTANT MANAGEMENT ---
@@ -199,7 +199,6 @@ def calculate_total(c_name):
     for day in range(1, 29):
         d_str = str(day)
         core = sum(1 for i in range(1, 11) if c_days[d_str].get(f"habit_{i}", False))
-        # bonus_5 is worth 5 points, bonus 1-4 are worth 1 point each
         bonus_daily = sum(1 for i in range(1, 5) if c_days[d_str].get(f"bonus_{i}", False))
         bonus_weekly = 5 if c_days[d_str].get("bonus_5", False) else 0
         total += (core + bonus_daily + bonus_weekly)
@@ -247,7 +246,13 @@ if view_mode == "Daily Logger":
     
     day_str = str(selected_day)
     day_state = c_data_profile["days"][day_str]
+    current_day_date = day_date_map[selected_day]
+    is_saturday = (current_day_date.weekday() == 5) # 5 represents Saturday in Python datetime
     
+    # If the day is changed to a non-Saturday, automatically uncheck bonus_5 to keep data valid
+    if not is_saturday and day_state.get("bonus_5", False):
+        day_state["bonus_5"] = False
+
     core_total = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
     bonus_daily_total = sum(1 for i in range(1, 5) if day_state.get(f"bonus_{i}", False))
     bonus_weekly_total = 5 if day_state.get("bonus_5", False) else 0
@@ -275,7 +280,7 @@ if view_mode == "Daily Logger":
             missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
             st.warning(f'🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: **{missed_str}**. Focus on breaking this streak!')
 
-    st.subheader(f"📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')})")
+    st.subheader(f"📝 Check-in for Day {selected_day} ({current_day_date.strftime('%A, %d %B %Y')})")
     
     if compare_profile != "None":
         cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
@@ -290,13 +295,17 @@ if view_mode == "Daily Logger":
                 h_key = f"habit_{i}"
                 day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
             
-            st.markdown("##### 🔥 Bonus Points")
+            st.markdown("##### 🔥 Daily Bonus Points")
             for i in range(1, 5):
                 b_key = f"bonus_{i}"
                 day_state[b_key] = st.checkbox(bonus_info[b_key][0], value=day_state.get(b_key, False), key=f"{my_profile}_d{selected_day}_{b_key}")
             
-            st.markdown("##### 🏃‍♂️ Weekly Bonus")
-            day_state["bonus_5"] = st.checkbox(bonus_info["bonus_5"][0], value=day_state.get("bonus_5", False), key=f"{my_profile}_d{selected_day}_bonus_5")
+            st.markdown("##### 🏃‍♂️ Saturday Parkrun Bonus")
+            if is_saturday:
+                day_state["bonus_5"] = st.checkbox(bonus_info["bonus_5"][0], value=day_state.get("bonus_5", False), key=f"{my_profile}_d{selected_day}_bonus_5")
+            else:
+                st.info("🔒 Parkrun bonus is only available on Saturdays.")
+                day_state["bonus_5"] = False
         
         with col_right:
             st.markdown(f"**👥 {compare_profile} (Comparison)**")
@@ -305,12 +314,12 @@ if view_mode == "Daily Logger":
                 h_key = f"habit_{i}"
                 st.checkbox(habits_info[h_key][0], value=cmp_day_state.get(h_key, False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_{h_key}")
             
-            st.markdown("##### 🔥 Bonus Points")
+            st.markdown("##### 🔥 Daily Bonus Points")
             for i in range(1, 5):
                 b_key = f"bonus_{i}"
                 st.checkbox(bonus_info[b_key][0], value=cmp_day_state.get(b_key, False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_{b_key}")
             
-            st.markdown("##### 🏃‍♂️ Weekly Bonus")
+            st.markdown("##### 🏃‍♂️ Saturday Parkrun Bonus")
             st.checkbox(bonus_info["bonus_5"][0], value=cmp_day_state.get("bonus_5", False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_bonus_5")
         
         st.markdown("---")
@@ -363,8 +372,12 @@ if view_mode == "Daily Logger":
                 b_key = f"bonus_{i}"
                 day_state[b_key] = st.checkbox(bonus_info[b_key][0], value=day_state.get(b_key, False), key=f"{my_profile}_d{selected_day}_{b_key}")
 
-        st.markdown("##### 🏃‍♂️ Weekly Bonus")
-        day_state["bonus_5"] = st.checkbox(bonus_info["bonus_5"][0], value=day_state.get("bonus_5", False), key=f"{my_profile}_d{selected_day}_bonus_5")
+        st.markdown("##### 🏃‍♂️ Saturday Parkrun Bonus (+5 pts)")
+        if is_saturday:
+            day_state["bonus_5"] = st.checkbox(bonus_info["bonus_5"][0], value=day_state.get("bonus_5", False), key=f"{my_profile}_d{selected_day}_bonus_5")
+        else:
+            st.info("🔒 Parkrun bonus is only available on Saturdays.")
+            day_state["bonus_5"] = False
 
         daily_notes = st.text_area("📖 Daily Notes / Reflections / Prayer Journal", value=day_state.get("notes", ""), key=f"{my_profile}_d{selected_day}_notes")
         day_state["notes"] = daily_notes
@@ -389,7 +402,7 @@ if view_mode == "Daily Logger":
     daily_total = core_total + bonus_daily_total + bonus_weekly_total
     
     st.write("---")
-    st.info(f"✨ **Day {selected_day} Score for {my_profile}:** **{daily_total} Points** ({core_total} Core + {bonus_daily_total} Daily Bonus + {bonus_weekly_total} Weekly Bonus)")
+    st.info(f"✨ **Day {selected_day} Score for {my_profile}:** **{daily_total} Points** ({core_total} Core + {bonus_daily_total} Daily Bonus + {bonus_weekly_total} Parkrun Bonus)")
 
     total_cumulative = calculate_total(my_profile)
     st.write("---")
@@ -594,7 +607,7 @@ else:
         st.write(f"### 📋 Performance Breakdown for {report_profile}")
         st.write(f"- **Total Accumulated Points:** {total_gained}")
         st.write(f"- **Challenge Start Date Synced:** {start_dt.strftime('%d %B %Y')}")
-        st.write(f"- **Areas where points were gained:** Consistent core, daily bonus, and weekly Parkrun completions.")
+        st.write(f"- **Areas where points were gained:** Consistent core, daily bonus, and Saturday Parkrun completions.")
         st.write(f"- **Habit Drop-off Areas (Most missed items across recorded days):**")
         
         sorted_misses = sorted(missed_counts.items(), key=lambda x: x[1], reverse=True)
