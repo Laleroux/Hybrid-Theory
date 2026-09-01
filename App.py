@@ -11,15 +11,15 @@ st.set_page_config(page_title="Hybrid Theory - 28 Day Challenge", page_icon="�
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling for mobile-friendly tight alignment
+# Custom Styling
 st.markdown("""
     <style>
-    .main-title { font-size: 30px; font-weight: bold; color: #2E4053; text-align: center; margin-bottom: 0px; }
-    .sub-title { font-size: 18px; font-weight: 600; color: #566573; text-align: center; margin-top: 2px; margin-bottom: 4px; }
-    .subtitle { font-size: 13px; color: #7F8C8D; text-align: center; margin-bottom: 15px; }
-    .alert-box { background-color: #FADBD8; padding: 10px; border-radius: 6px; color: #922B21; font-weight: bold; margin-bottom: 8px; font-size: 13px; }
-    .success-box { background-color: #D4EFDF; padding: 10px; border-radius: 6px; color: #145A32; font-weight: bold; font-size: 13px; }
-    .activity-card { background-color: #F8F9F9; padding: 8px; border-left: 4px solid #3366CC; border-radius: 4px; margin-bottom: 6px; font-size: 12px; }
+    .main-title { font-size: 34px; font-weight: bold; color: #2E4053; text-align: center; margin-bottom: 0px; }
+    .sub-title { font-size: 20px; font-weight: 600; color: #566573; text-align: center; margin-top: 2px; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: #7F8C8D; text-align: center; margin-bottom: 20px; }
+    .alert-box { background-color: #FADBD8; padding: 12px; border-radius: 8px; color: #922B21; font-weight: bold; margin-bottom: 10px; }
+    .success-box { background-color: #D4EFDF; padding: 12px; border-radius: 8px; color: #145A32; font-weight: bold; }
+    .activity-card { background-color: #F8F9F9; padding: 10px; border-left: 4px solid #3366CC; border-radius: 4px; margin-bottom: 8px; font-size: 13px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -28,7 +28,7 @@ st.markdown('<p class="sub-title">28 Day Challenge</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Consistency over perfection. Never miss twice!</p>', unsafe_allow_html=True)
 
 # Data Persistence File
-DATA_FILE = "challenge_data_v7.json"
+DATA_FILE = "challenge_data_v6.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -63,18 +63,18 @@ def save_data(data):
 if "app_data" not in st.session_state:
     st.session_state.app_data = load_data()
 
-# Concise, mobile-optimized habit labels paired with full guideline tooltips/info
+# Updated Habit definitions with new names and detailed info sheets
 habits_info = {
-    "habit_1": ("1. Hydration", "💧 **Guideline:** Drink between 6 to 8 glasses of water a day."),
-    "habit_2": ("2. Unified Nutrition", "🥗 **Guideline:** Stick to the high-volume 1500-calorie clean meal structure (gluten-free, lactose-free, sugar-free)."),
-    "habit_3": ("3. Protein & Greens", "🥩 **Guideline:** Prioritize lean proteins (chicken, extra-lean beef mince, steak, tuna, whey) and volume vegetables."),
-    "habit_4": ("4. Daily Steps", "🚶‍♀️ **Guideline:** Walk between 8,000 and 10,000 steps daily."),
-    "habit_5": ("5. Workout / Active", "💪 **Guideline:** Complete your scheduled resistance workout or dedicated active recovery session."),
-    "habit_6": ("6. Spiritual Time", "📖 **Guideline:** Dedicate quiet time to prayer, scripture reading, or spiritual reflection."),
-    "habit_7": ("7. Bedtime Discipline", "🌙 **Guideline:** Wind down and get to bed on time to ensure quality rest."),
-    "habit_8": ("8. Screen-Free (30m)", "📵 **Guideline:** Disconnect from phones and screens for at least 30 minutes before sleep."),
-    "habit_9": ("9. Self-Care", "✨ **Guideline:** Complete your intentional skincare and personal self-care rituals."),
-    "habit_10": ("10. Mental Wellbeing", "🧘‍♀️ **Guideline:** Engage in an activity that boosts mental wellness, reading, journaling, or relaxing.")
+    "habit_1": ("1. Daily H2O", "💧 **Guideline:** Drink between 6 to 8 glasses of water a day."),
+    "habit_2": ("2. Clean Fuel (1,500 Cal)", "🥗 **Guideline:** Stick to the high-volume 1500-calorie clean meal structure (gluten-free, lactose-free, sugar-free)."),
+    "habit_3": ("3. Lean & Green", "🥩 **Guideline:** Prioritize lean proteins (chicken, extra-lean beef mince, steak, tuna, whey) and volume vegetables."),
+    "habit_4": ("4. 8k Step Goal", "🚶‍♀️ **Guideline:** Walk between 8,000 and 10,000 steps daily."),
+    "habit_5": ("5. Daily Fitness Session", "💪 **Guideline:** Complete your scheduled resistance workout or dedicated active recovery session."),
+    "habit_6": ("6. Word & Prayer", "📖 **Guideline:** Dedicate quiet time to prayer, scripture reading, or spiritual reflection."),
+    "habit_7": ("7. Lights Out Goal", "🌙 **Guideline:** Wind down and get to bed on time to ensure quality rest."),
+    "habit_8": ("8. Pre-Sleep Unplug", "📵 **Guideline:** Disconnect from phones and screens for at least 30 minutes before sleep."),
+    "habit_9": ("9. Glow Routine", "✨ **Guideline:** Complete your intentional skincare and personal self-care rituals."),
+    "habit_10": ("10. Mind & Journal", "🧘‍♀️ **Guideline:** Engage in an activity that boosts mental wellness, reading, journaling, or relaxing.")
 }
 
 # --- SIDEBAR: CHALLENGE & CONTESTANT MANAGEMENT ---
@@ -89,7 +89,7 @@ selected_start_date = st.sidebar.date_input("Challenge Start Date", value=parsed
 st.session_state.app_data["start_date"] = selected_start_date.isoformat()
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("👥 Contestants (Max 10)")
+st.sidebar.subheader("👥 Contestants Management (Max 10)")
 
 contestant_names = list(st.session_state.app_data["contestants"].keys())
 
@@ -145,12 +145,12 @@ day_date_map = {day: start_dt + datetime.timedelta(days=day-1) for day in range(
 
 if view_mode == "Daily Logger":
     col_sel1, col_sel2 = st.columns(2)
-    my_profile = col_sel1.selectbox("Your Profile", contestant_names, key="my_prof")
+    my_profile = col_sel1.selectbox("Your Profile (Editable)", contestant_names, key="my_prof")
     other_choices = ["None"] + [n for n in contestant_names if n != my_profile]
-    compare_profile = col_sel2.selectbox("Compare With", other_choices, key="cmp_prof")
+    compare_profile = col_sel2.selectbox("Compare With (Side-by-Side)", other_choices, key="cmp_prof")
     
     c_data_profile = st.session_state.app_data["contestants"][my_profile]
-    user_email = st.text_input(f"📧 Email Address for Reports ({my_profile})", value=c_data_profile.get("email", ""))
+    user_email = st.text_input(f"📧 Email Address for Weekly Reports ({my_profile})", value=c_data_profile.get("email", ""))
     c_data_profile["email"] = user_email
     
     selected_day = st.selectbox(
@@ -164,7 +164,6 @@ if view_mode == "Daily Logger":
     
     daily_total = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
 
-    # Warnings placed right underneath header/slogan area
     if daily_total < 5:
         st.markdown(f'<p class="alert-box">⚠️ Low Score Warning: Your daily score is {daily_total} (below 5 points). Let\'s push to hit more habits tomorrow!</p>', unsafe_allow_html=True)
 
@@ -185,9 +184,9 @@ if view_mode == "Daily Logger":
         
         if missed_twice_list:
             missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
-            st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You missed: <b>{missed_str}</b> two days in a row. Break the streak!</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: <b>{missed_str}</b>. Focus on breaking this streak!</p>', unsafe_allow_html=True)
 
-    st.write(f"### 📝 Day {selected_day} Check-in ({day_date_map[selected_day].strftime('%d %b %Y')})")
+    st.write(f"### 📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')})")
     
     if compare_profile != "None":
         cmp_data_profile = st.session_state.app_data["contestants"][compare_profile]
@@ -196,13 +195,13 @@ if view_mode == "Daily Logger":
         col_left, col_right = st.columns(2)
         
         with col_left:
-            st.markdown(f"**👤 {my_profile} (You)**")
+            st.markdown(f"#### 👤 {my_profile} (You)")
             for i in range(1, 11):
                 h_key = f"habit_{i}"
                 day_state[h_key] = st.checkbox(habits_info[h_key][0], value=day_state.get(h_key, False), key=f"{my_profile}_d{selected_day}_{h_key}")
         
         with col_right:
-            st.markdown(f"**👥 {compare_profile}**")
+            st.markdown(f"#### 👥 {compare_profile} (Comparison)")
             for i in range(1, 11):
                 h_key = f"habit_{i}"
                 st.checkbox(habits_info[h_key][0], value=cmp_day_state.get(h_key, False), disabled=True, key=f"cmp_{compare_profile}_d{selected_day}_{h_key}")
@@ -210,31 +209,31 @@ if view_mode == "Daily Logger":
         st.markdown("---")
         col_n1, col_n2 = st.columns(2)
         with col_n1:
-            daily_notes = st.text_area(f"📖 {my_profile}'s Notes", value=day_state.get("notes", ""), key=f"{my_profile}_d{selected_day}_notes")
+            daily_notes = st.text_area(f"📖 {my_profile}'s Daily Notes", value=day_state.get("notes", ""), key=f"{my_profile}_d{selected_day}_notes")
             day_state["notes"] = daily_notes
         with col_n2:
-            st.markdown(f"📖 **{compare_profile}'s Notes:**")
+            st.markdown(f"📖 **{compare_profile}'s Daily Notes:**")
             cmp_notes = cmp_day_state.get("notes", "")
-            st.info(cmp_notes if cmp_notes else "No notes.")
+            st.info(cmp_notes if cmp_notes else "No notes recorded.")
             
         st.markdown("---")
         col_p1, col_p2 = st.columns(2)
         with col_p1:
-            st.write(f"📸 **{my_profile}'s Photo**")
-            uploaded_file = st.file_uploader("Upload snapshot", type=["jpg", "jpeg", "png"], key=f"{my_profile}_d{selected_day}_photo_upload")
+            st.write(f"📸 **{my_profile}'s Photo Proof**")
+            uploaded_file = st.file_uploader("Upload image snapshot", type=["jpg", "jpeg", "png"], key=f"{my_profile}_d{selected_day}_photo_upload")
             if uploaded_file is not None:
                 file_path = os.path.join("uploads", f"{my_profile}_day_{selected_day}_{uploaded_file.name}")
                 with open(file_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
                 day_state["photo"] = file_path
             if day_state.get("photo") and os.path.exists(day_state["photo"]):
-                st.image(day_state["photo"], caption=f"Day {selected_day} ({my_profile})", width=220)
+                st.image(day_state["photo"], caption=f"Proof for Day {selected_day} ({my_profile})", width=250)
         with col_p2:
-            st.write(f"📸 **{compare_profile}'s Photo**")
+            st.write(f"📸 **{compare_profile}'s Photo Proof**")
             if cmp_day_state.get("photo") and os.path.exists(cmp_day_state["photo"]):
-                st.image(cmp_day_state["photo"], caption=f"Day {selected_day} ({compare_profile})", width=220)
+                st.image(cmp_day_state["photo"], caption=f"Proof for Day {selected_day} ({compare_profile})", width=250)
             else:
-                st.info("No photo.")
+                st.info("No photo uploaded.")
     else:
         col1, col2 = st.columns(2)
         with col1:
@@ -259,7 +258,7 @@ if view_mode == "Daily Logger":
             day_state["photo"] = file_path
 
         if day_state.get("photo") and os.path.exists(day_state["photo"]):
-            st.image(day_state["photo"], caption=f"Proof for Day {selected_day} ({my_profile})", width=280)
+            st.image(day_state["photo"], caption=f"Proof for Day {selected_day} ({my_profile})", width=300)
 
     save_data(st.session_state.app_data)
 
@@ -270,7 +269,7 @@ if view_mode == "Daily Logger":
 
     total_cumulative = calculate_total(my_profile)
     st.write("---")
-    st.subheader(f"🏆 Milestone Rewards ({my_profile})")
+    st.subheader(f"🏆 Milestone Rewards Status ({my_profile})")
     st.write(f"**Total Cumulative Points:** {total_cumulative} / 280")
     
     if total_cumulative >= 280:
@@ -310,7 +309,8 @@ elif view_mode == "Rules & Guidelines":
     st.markdown("---")
     
     st.markdown("### 📋 Daily Habit Guidelines")
-    for h_key, (_, desc) in habits_info.items():
+    for h_key, (title, desc) in habits_info.items():
+        st.markdown(f"**{title}**")
         st.markdown(f"> {desc}")
         st.markdown("")
         
