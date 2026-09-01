@@ -6,51 +6,68 @@ import datetime
 import altair as alt
 
 # Page Configuration
-st.set_page_config(page_title="HYBRID THEORY - 28 Day Challenge", page_icon="🌸", layout="centered")
+st.set_page_config(page_title="HYBRID THEORY - 28 Day Challenge", page_icon="🔥", layout="centered")
 
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling for Slimmer, Flame-Themed Header Banner (Centered & Punchy Font)
+# Custom Styling for Compact Layout, Fiery Header, and Checkbox Accent Color
 st.markdown("""
     <style>
+    /* Tighten overall app spacing */
+    .block-container {
+        padding-top: 1.5rem;
+        padding-bottom: 2rem;
+    }
+    p {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Fiery Accent Color for Checkboxes */
+    input[type="checkbox"]:checked {
+        accent-color: #D35400 !important;
+    }
+
+    /* Compact & Dead-Centered Flame Banner */
     .header-container {
         background: linear-gradient(135deg, #C0392B, #D35400, #F39C12);
-        padding: 25px 15px;
-        border-radius: 10px;
+        padding: 15px 10px;
+        border-radius: 8px;
         text-align: center !important;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        margin-bottom: 20px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        margin-bottom: 15px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
     }
     .main-title-custom {
         font-family: 'Impact', 'Arial Black', sans-serif;
-        font-size: 54px;
+        font-size: 46px;
         font-weight: 900;
         color: #FFFFFF !important;
         margin: 0 !important;
-        line-height: 1.1;
+        padding: 0 !important;
+        line-height: 1.0;
         letter-spacing: 2px;
         text-align: center !important;
         width: 100%;
     }
     .sub-title-custom {
-        font-size: 28px;
+        font-size: 22px;
         font-weight: 600;
         color: #FAD7A0 !important;
-        margin-top: 8px !important;
-        margin-bottom: 0 !important;
+        margin: 4px 0 0 0 !important;
+        padding: 0 !important;
+        line-height: 1.2;
         text-align: center !important;
         width: 100%;
     }
     .tagline-custom {
-        font-size: 13px;
+        font-size: 12px;
         color: #FEF9E7 !important;
-        margin-top: 8px !important;
-        margin-bottom: 0 !important;
+        margin: 4px 0 0 0 !important;
+        padding: 0 !important;
         letter-spacing: 0.5px;
         text-align: center !important;
         width: 100%;
@@ -72,7 +89,8 @@ def load_data():
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
                 if "contestants" in data:
-                    default_colors = ["#FF69B4", "#3366CC", "#109618", "#FF9900", "#990099", "#0099C6", "#DD4477", "#66AA00", "#B82E2E", "#316395"]
+                    # Color theory complementary palette for fiery orange (Blues, Teals, Ambers, Greens)
+                    default_colors = ["#1B4F72", "#117A65", "#B7950B", "#7D3C98", "#2E4053", "#1B3136", "#884EA0", "#1E8449", "#2471A3", "#A04000"]
                     for idx, (name, c_info) in enumerate(data["contestants"].items()):
                         if "color" not in c_info:
                             c_info["color"] = default_colors[idx % len(default_colors)]
@@ -83,8 +101,8 @@ def load_data():
     default_structure = {
         "start_date": "2026-09-01",
         "contestants": {
-            "Contestant 1": {"email": "", "color": "#FF69B4", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"notes": "", "photo": ""} for day in range(1, 29)}},
-            "Contestant 2": {"email": "", "color": "#3366CC", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"notes": "", "photo": ""} for day in range(1, 29)}}
+            "Contestant 1": {"email": "", "color": "#1B4F72", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"notes": "", "photo": ""} for day in range(1, 29)}},
+            "Contestant 2": {"email": "", "color": "#117A65", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"notes": "", "photo": ""} for day in range(1, 29)}}
         }
     }
     return default_structure
@@ -135,7 +153,7 @@ if len(contestant_names) < 10:
         if new_name in contestant_names:
             st.sidebar.error("Contestant name already exists!")
         else:
-            default_colors = ["#FF69B4", "#3366CC", "#109618", "#FF9900", "#990099", "#0099C6", "#DD4477", "#66AA00", "#B82E2E", "#316395"]
+            default_colors = ["#1B4F72", "#117A65", "#B7950B", "#7D3C98", "#2E4053", "#1B3136", "#884EA0", "#1E8449", "#2471A3", "#A04000"]
             assigned_color = default_colors[len(contestant_names) % len(default_colors)]
             st.session_state.app_data["contestants"][new_name] = {
                 "email": "",
@@ -157,9 +175,10 @@ contestant_names = list(st.session_state.app_data["contestants"].keys())
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("🎨 Contestant Line Colors")
+st.sidebar.caption("Curated complementary tones matching fiery orange.")
 for name in contestant_names:
     c_info = st.session_state.app_data["contestants"][name]
-    current_color = c_info.get("color", "#FF69B4")
+    current_color = c_info.get("color", "#1B4F72")
     new_color = st.sidebar.color_picker(f"{name} Color", value=current_color, key=f"color_{name}")
     c_info["color"] = new_color
 save_data(st.session_state.app_data)
@@ -406,7 +425,7 @@ elif view_mode == "Analytics & Graphs":
     df_chart = pd.DataFrame(chart_data)
     
     color_domain = list(contestants_dict.keys())
-    color_range = [contestants_dict[name].get("color", "#1f77b4") for name in color_domain]
+    color_range = [contestants_dict[name].get("color", "#1B4F72") for name in color_domain]
     
     line_chart = alt.Chart(df_chart).mark_line(point=True, strokeWidth=3).encode(
         x=alt.X('Day:Q', title='Day of Challenge'),
@@ -437,7 +456,7 @@ elif view_mode == "Analytics & Graphs":
         })
         
     df_habits = pd.DataFrame(habit_summary)
-    habit_chart = alt.Chart(df_habits).mark_bar(color="#5D6D7E").encode(
+    habit_chart = alt.Chart(df_habits).mark_bar(color="#D35400").encode(
         x=alt.X('Completions:Q', title='Total Check-ins Across All Contestants & Days'),
         y=alt.Y('Habit:N', sort='-x', title='Habit'),
         tooltip=['Habit', 'Completions']
