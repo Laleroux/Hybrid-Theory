@@ -261,7 +261,7 @@ if view_mode == "Daily Logger":
     other_choices = ["None"] + [n for n in gladiator_names if n != my_profile]
     compare_profile = col_sel2.selectbox("Compare With (Side-by-Side)", other_choices, key="cmp_prof")
     
-    # --- RANKING RIBBON / MEDAL DISPLAY (MOVED RIGHT HERE, BELOW HEADER / ABOVE PROFILE SETTINGS) ---
+    # --- RANKING RIBBON / MEDAL DISPLAY ---
     all_totals = {name: calculate_total(name) for name in gladiator_names}
     sorted_rankings = sorted(all_totals.items(), key=lambda x: x[1], reverse=True)
     
@@ -534,11 +534,42 @@ elif view_mode == "Rules & Guidelines":
     st.markdown("Welcome to **HYBRID THEORY: 28 Day Challenge**! Remember our core philosophy: **Consistency over perfection. Never miss twice!**")
     st.markdown("---")
     
-    st.markdown("### 📋 Core Habit Guidelines (10 Total)")
+    # Profile selector for viewing custom veto rules in the guide
+    rule_profile = st.selectbox("Select Gladiator Profile to view customized rules", gladiator_names, key="rule_prof_sel")
+    prof_rules_data = st.session_state.app_data["gladiators"][rule_profile]
+    active_veto = prof_rules_data.get("vetoed_habit", None)
+    custom_rep = prof_rules_data.get("custom_replacement", {"title": "", "guideline": ""})
+    
+    st.markdown(f"### 📋 Core Habit Guidelines (10 Total for {rule_profile})")
     for h_key, (title, desc) in habits_info.items():
-        st.markdown(f"**{title}**")
-        st.markdown(f"> {desc}")
-        st.markdown("")
+        if h_key == active_veto and custom_rep.get("title"):
+            custom_title_text = f"{title.split('.')[0]}. {custom_rep['title']} (Custom Vetoed Replacement)"
+            custom_desc_text = f"⭐ **Custom Guideline:** {custom_rep['guideline']}"
+            st.markdown(f"**{custom_title_text}**")
+            st.markdown(f"> {custom_desc_text}")
+            st.markdown("")
+        else:
+            st.markdown(f"**{title}**")
+            st.markdown(f"> {desc}")
+            st.markdown("")
+            
+    st.markdown("---")
+    st.markdown("### 🔥 Daily Bonus Points (+1 pt each)")
+    for b_key, (b_title, b_desc) in bonus_info.items():
+        if b_key != "bonus_5":
+            st.markdown(f"**{b_title}**")
+            st.markdown(f"> {b_desc}")
+            st.markdown("")
+
+    st.markdown("---")
+    st.markdown("### 🏃‍♂️ Weekly Saturday Bonus (+5 pts)")
+    parkrun_key = "bonus_5"
+    st.markdown(f"**{bonus_info[parkrun_key][0]}**")
+    st.markdown(f"> {bonus_info[parkrun_key][1]}")
+
+    st.markdown("---")
+    st.markdown("### 🚨 The 'Never Miss Twice' Rule")
+    st.markdown("> **Consistency over perfection.** Life happens, workouts get skipped, and meal plans slip. That is okay. However, **never miss twice in a row**. If you miss a habit or fall short on points one day, your absolute priority is bouncing right back the next day to protect your streak and momentum.")
 
 elif view_mode == "Analytics & Graphs":
     st.subheader("📈 Gladiators Cumulative Progress Line Graph")
