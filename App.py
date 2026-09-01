@@ -743,7 +743,19 @@ else:
                 h_label = habits_info[h_key][0]
             st.write(f"  * *{h_label}* (Missed {count} times)")
             
+        st.markdown("---")
+        st.write(f"### ⚔️ Side-by-Side Group Standing Comparison")
+        st.markdown("Here is how all other Gladiators compare on total points for this weekly report window:")
+        
+        all_gladiator_totals = {name: calculate_total(name) for name in gladiator_names}
+        sorted_group_ranks = sorted(all_gladiator_totals.items(), key=lambda x: x[1], reverse=True)
+        
+        for r_idx, (g_name, g_pts) in enumerate(sorted_group_ranks):
+            marker = "👑 (You)" if g_name == report_profile else f"(Rank #{r_idx + 1})"
+            st.write(f"- **{g_name}**: {g_pts} total points {marker}")
+
+        st.markdown("---")
         if rep_email:
-            st.info(f"📬 In a fully hosted deployment, this formatted report would automatically be dispatched to **{rep_email}** every week!")
+            st.info(f"📬 In a fully hosted deployment, this comprehensive formatted report (including individual breakdowns and group standings) would automatically be dispatched to **{rep_email}** every week!")
         else:
             st.warning("⚠️ Enter your email address in the Daily Logger view to enable automatic weekly report deliveries.")
