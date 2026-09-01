@@ -6,47 +6,58 @@ import datetime
 import altair as alt
 
 # Page Configuration
-st.set_page_config(page_title="Hybrid Theory - 28 Day Challenge", page_icon="🌸", layout="centered")
+st.set_page_config(page_title="HYBRID THEORY - 28 Day Challenge", page_icon="🌸", layout="centered")
 
 # Ensure uploads directory exists for photo proof
 os.makedirs("uploads", exist_ok=True)
 
-# Custom Styling for Slimmer, Flame-Themed Header Banner
+# Custom Styling for Slimmer, Flame-Themed Header Banner (Centered & Punchy Font)
 st.markdown("""
     <style>
     .header-container {
         background: linear-gradient(135deg, #C0392B, #D35400, #F39C12);
-        padding: 20px 15px;
+        padding: 25px 15px;
         border-radius: 10px;
-        text-align: center;
+        text-align: center !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         margin-bottom: 20px;
         box-shadow: 0 3px 10px rgba(0,0,0,0.2);
     }
     .main-title-custom {
-        font-size: 52px;
-        font-weight: 800;
+        font-family: 'Impact', 'Arial Black', sans-serif;
+        font-size: 54px;
+        font-weight: 900;
         color: #FFFFFF !important;
-        margin: 0;
+        margin: 0 !important;
         line-height: 1.1;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
+        text-align: center !important;
+        width: 100%;
     }
     .sub-title-custom {
-        font-size: 30px;
+        font-size: 28px;
         font-weight: 600;
         color: #FAD7A0 !important;
-        margin-top: 8px;
-        margin-bottom: 0;
+        margin-top: 8px !important;
+        margin-bottom: 0 !important;
+        text-align: center !important;
+        width: 100%;
     }
     .tagline-custom {
         font-size: 13px;
         color: #FEF9E7 !important;
-        margin-top: 8px;
-        margin-bottom: 0;
+        margin-top: 8px !important;
+        margin-bottom: 0 !important;
         letter-spacing: 0.5px;
+        text-align: center !important;
+        width: 100%;
     }
     </style>
     <div class="header-container">
-        <h1 class="main-title-custom">Hybrid Theory</h1>
+        <h1 class="main-title-custom">HYBRID THEORY</h1>
         <h2 class="sub-title-custom">28 Day Challenge</h2>
         <p class="tagline-custom">Consistency over perfection. Never miss twice!</p>
     </div>
@@ -351,7 +362,7 @@ elif view_mode == "28-Day Overview Grid":
 
 elif view_mode == "Rules & Guidelines":
     st.subheader("📜 Challenge Rules & Guidelines")
-    st.markdown("Welcome to **Hybrid Theory: 28 Day Challenge**! Remember our core philosophy: **Consistency over perfection. Never miss twice!**")
+    st.markdown("Welcome to **HYBRID THEORY: 28 Day Challenge**! Remember our core philosophy: **Consistency over perfection. Never miss twice!**")
     st.markdown("---")
     
     st.markdown("### 📋 Daily Habit Guidelines")
