@@ -4,22 +4,16 @@ import json
 import os
 import datetime
 
-# Fix for matplotlib backend in cloud environments
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
 # Page Configuration
 st.set_page_config(page_title="28-Day Hybrid Habit Challenge", page_icon="🌸", layout="centered")
 
-# Custom Teal & Light Theme Styling
+# Custom Styling
 st.markdown("""
     <style>
-    .main-title { font-size: 28px; font-weight: bold; color: #005F73; text-align: center; }
-    .subtitle { font-size: 14px; color: #52796F; text-align: center; margin-bottom: 25px; }
-    .alert-box { background-color: #F8D7DA; padding: 12px; border-radius: 8px; color: #842029; font-weight: bold; margin-bottom: 10px; border-left: 5px solid #DC3545; }
-    .success-box { background-color: #D1E7DD; padding: 12px; border-radius: 8px; color: #0F5132; font-weight: bold; border-left: 5px solid #198754; }
-    .stApp { background-color: #F4FBFB; }
+    .main-title { font-size: 26px; font-weight: bold; color: #2E4053; text-align: center; }
+    .subtitle { font-size: 14px; color: #7F8C8D; text-align: center; margin-bottom: 20px; }
+    .alert-box { background-color: #FADBD8; padding: 12px; border-radius: 8px; color: #922B21; font-weight: bold; margin-bottom: 10px; }
+    .success-box { background-color: #D4EFDF; padding: 12px; border-radius: 8px; color: #145A32; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -27,7 +21,7 @@ st.markdown('<p class="main-title">🌸 28-Day Hybrid Habit Challenge</p>', unsa
 st.markdown('<p class="subtitle">Consistency over perfection. Never miss twice!</p>', unsafe_allow_html=True)
 
 # Data Persistence File
-DATA_FILE = "challenge_data_v4.json"
+DATA_FILE = "challenge_data_v3.json"
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -35,21 +29,14 @@ def load_data():
             with open(DATA_FILE, "r") as f:
                 return json.load(f)
         except Exception:
-            pass # If file is corrupted, fall back to default structure
-            
+            pass
+    
+    # Default initial state with 2 default contestants and a start date
     default_structure = {
         "start_date": "2026-09-01",
         "contestants": {
-            "Contestant 1": {
-                "email": "", 
-                "color": "#008080",
-                "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": ""} for day in range(1, 29)}
-            },
-            "Contestant 2": {
-                "email": "", 
-                "color": "#20B2AA",
-                "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": ""} for day in range(1, 29)}
-            }
+            "Contestant 1": {"email": "", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": ""} for day in range(1, 29)}},
+            "Contestant 2": {"email": "", "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": ""} for day in range(1, 29)}}
         }
     }
     return default_structure
@@ -96,14 +83,13 @@ contestant_names = list(st.session_state.app_data["contestants"].keys())
 
 # Add new contestant
 if len(contestant_names) < 10:
-    new_name = st.sidebar.text_input("Add New Contestant Name", key="new_contestant_input")
+    new_name = st.sidebar.text_input("Add New Contestant Name")
     if st.sidebar.button("Add Contestant") and new_name:
         if new_name in contestant_names:
             st.sidebar.error("Contestant name already exists!")
         else:
             st.session_state.app_data["contestants"][new_name] = {
                 "email": "",
-                "color": "#0A9396",
                 "days": {str(day): {f"habit_{i}": False for i in range(1, 11)} | {"bonus": 0, "notes": ""} for day in range(1, 29)}
             }
             save_data(st.session_state.app_data)
@@ -118,9 +104,10 @@ if len(contestant_names) > 1:
             save_data(st.session_state.app_data)
             st.rerun()
 
+# Refresh contestant list after potential modifications
 contestant_names = list(st.session_state.app_data["contestants"].keys())
 
-view_mode = st.sidebar.radio("Navigation", ["Daily Logger", "28-Day Overview Grid", "Analytics & Line Graph", "Leaderboard & Reports"])
+view_mode = st.sidebar.radio("Navigation", ["Daily Logger", "28-Day Overview Grid", "Leaderboard & Reports"])
 
 # Helper function to calculate totals
 def calculate_total(c_name):
@@ -133,21 +120,19 @@ def calculate_total(c_name):
         total += core + bonus
     return total
 
+# Generate Date Mapping dictionary for the 28 days
 start_dt = datetime.date.fromisoformat(st.session_state.app_data["start_date"])
 day_date_map = {day: start_dt + datetime.timedelta(days=day-1) for day in range(1, 29)}
 
 if view_mode == "Daily Logger":
     current_profile = st.selectbox("Select Profile", contestant_names)
-    c_data_profile = st.session_state.app_data["contestants"][current_profile]
-    
-    # Custom Color Picker for Contestant
-    chosen_color = st.color_picker(f"🎨 Signature Color for {current_profile}", value=c_data_profile.get("color", "#008080"))
-    c_data_profile["color"] = chosen_color
     
     # Email input field
+    c_data_profile = st.session_state.app_data["contestants"][current_profile]
     user_email = st.text_input(f"📧 Email Address for Weekly Reports ({current_profile})", value=c_data_profile.get("email", ""))
     c_data_profile["email"] = user_email
     
+    # Day selection formatted with real calendar dates
     selected_day = st.selectbox(
         "Select Day to Log", 
         list(range(1, 29)), 
@@ -160,6 +145,7 @@ if view_mode == "Daily Logger":
     st.write(f"### 📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')}) — {current_profile}")
     st.info("💡 *Tip: Click on the 'ℹ️ Info' expander next to any habit to review its specific daily rule.*")
     
+    # Render Checkboxes with Info popovers
     col1, col2 = st.columns(2)
     
     def render_habit_item(i, column):
@@ -180,21 +166,25 @@ if view_mode == "Daily Logger":
         for i in range(6, 11):
             render_habit_item(i, col2)
 
+    # Bonus Points Input
     bonus_pts = st.number_input("⭐ Daily Bonus Points (Max 3)", min_value=0, max_value=3, value=day_state.get("bonus", 0), key=f"{current_profile}_d{selected_day}_bonus")
     day_state["bonus"] = bonus_pts
 
+    # Daily Notes / Journal
     daily_notes = st.text_area("📖 Daily Notes / Reflections / Prayer Journal", value=day_state.get("notes", ""), key=f"{current_profile}_d{selected_day}_notes")
     day_state["notes"] = daily_notes
 
+    # Save automatically to JSON
     save_data(st.session_state.app_data)
 
+    # Calculate Daily Subtotal
     core_completed = sum(1 for i in range(1, 11) if day_state.get(f"habit_{i}", False))
     daily_total = core_completed + bonus_pts
     
     st.write("---")
     st.info(f"✨ **Day {selected_day} Score:** {core_completed} (Core) + {bonus_pts} (Bonus) = **{daily_total} Points**")
 
-    # Warnings
+    # --- WARNING LOGIC ---
     if daily_total < 5:
         st.markdown(f'<p class="alert-box">⚠️ Low Score Warning: Your daily score is {daily_total} (below 5 points). Let\'s push to hit more habits tomorrow!</p>', unsafe_allow_html=True)
 
@@ -215,8 +205,9 @@ if view_mode == "Daily Logger":
         
         if missed_twice_list:
             missed_str = ", ".join([item.split(". ")[1] for item in missed_twice_list])
-            st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You missed the following item(s) two days in a row: <b>{missed_str}</b>. Focus on breaking this streak!</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="alert-box">🔄 Habit Repeat Miss Warning: You have missed the following item(s) two days in a row: <b>{missed_str}</b>. Focus on breaking this streak!</p>', unsafe_allow_html=True)
 
+    # Cumulative Progress
     total_cumulative = calculate_total(current_profile)
     st.write("---")
     st.subheader("🏆 Milestone Rewards Status")
@@ -253,42 +244,6 @@ elif view_mode == "28-Day Overview Grid":
     
     df_grid = pd.DataFrame(grid_data)
     st.dataframe(df_grid, use_container_width=True)
-
-elif view_mode == "Analytics & Line Graph":
-    st.subheader("📈 Cumulative Progress Over Time")
-    st.write("Compare everyone's ongoing trajectory across the 28 days with overlapping line charts:")
-    
-    chart_data = {}
-    for day in range(1, 29):
-        d_str = str(day)
-        row_data = {}
-        for name, data in st.session_state.app_data["contestants"].items():
-            running_total = 0
-            for d_sub in range(1, day + 1):
-                sub_str = str(d_sub)
-                core = sum(1 for i in range(1, 11) if data["days"][sub_str].get(f"habit_{i}", False))
-                bonus = data["days"][sub_str].get("bonus", 0)
-                running_total += core + bonus
-            row_data[name] = running_total
-        chart_data[f"Day {day}"] = row_data
-
-    df_chart = pd.DataFrame(chart_data).T
-    
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for name, data in st.session_state.app_data["contestants"].items():
-        color = data.get("color", "#008080")
-        ax.plot(df_chart.index, df_chart[name], marker='o', linewidth=2.5, label=name, color=color)
-
-    ax.set_title("Contestants Cumulative Challenge Trajectory", fontsize=14, color="#005F73", fontweight='bold')
-    ax.set_xlabel("Challenge Day", fontsize=11, color="#2F3E46")
-    ax.set_ylabel("Cumulative Points", fontsize=11, color="#2F3E46")
-    plt.xticks(rotation=45, ha='right')
-    ax.grid(True, linestyle='--', alpha=0.5)
-    ax.legend(title="Contestants")
-    plt.tight_layout()
-    
-    st.pyplot(fig)
-    plt.close(fig)
 
 else:
     st.subheader("📊 Group Leaderboard & Weekly Reports")
