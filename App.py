@@ -239,7 +239,6 @@ if is_admin:
     save_data(st.session_state.app_data)
 
 st.sidebar.markdown("---")
-# Added "Gladiators & Scores" tab right into the main navigation radio selector
 view_mode = st.sidebar.radio("Navigation", ["Daily Logger", "Gladiators & Scores", "28-Day Overview Grid", "Rules & Guidelines", "Analytics & Graphs", "Leaderboard & Activity Feed"])
 
 def calculate_total(g_name):
@@ -261,6 +260,27 @@ if view_mode == "Daily Logger":
     my_profile = col_sel1.selectbox("Your Profile", gladiator_names, key="my_prof")
     other_choices = ["None"] + [n for n in gladiator_names if n != my_profile]
     compare_profile = col_sel2.selectbox("Compare With (Side-by-Side)", other_choices, key="cmp_prof")
+    
+    # --- RANKING RIBBON / MEDAL DISPLAY (MOVED RIGHT HERE, BELOW HEADER / ABOVE PROFILE SETTINGS) ---
+    all_totals = {name: calculate_total(name) for name in gladiator_names}
+    sorted_rankings = sorted(all_totals.items(), key=lambda x: x[1], reverse=True)
+    
+    user_rank = 1
+    for idx, (g_name, _) in enumerate(sorted_rankings):
+        if g_name == my_profile:
+            user_rank = idx + 1
+            break
+            
+    my_score = all_totals[my_profile]
+    
+    if user_rank == 1:
+        st.success(f"🏆 **1st Place Ribbon!** You are leading the pack with **{my_score} points**! Keep up the incredible consistency!")
+    elif user_rank == 2:
+        st.info(f"🥈 **2nd Place Medal!** You're sitting strong at **{my_score} points**—just a stone's throw away from the top spot!")
+    elif user_rank == 3:
+        st.warning(f"🥉 **3rd Place Medal!** You have **{my_score} points**. Push hard to climb the ranks!")
+    else:
+        st.markdown(f"🏅 **Rank #{user_rank}** — You have **{my_score} points**. Keep checking off those daily habits to close the gap!")
     
     # --- OPEN USER SETTINGS: RENAME & VETO CONFIGURATION FOR ANY GLADIATOR ---
     st.markdown("---")
@@ -326,27 +346,6 @@ if view_mode == "Daily Logger":
 
     st.markdown("---")
 
-    # --- RANKING RIBBON / MEDAL DISPLAY ---
-    all_totals = {name: calculate_total(name) for name in gladiator_names}
-    sorted_rankings = sorted(all_totals.items(), key=lambda x: x[1], reverse=True)
-    
-    user_rank = 1
-    for idx, (g_name, _) in enumerate(sorted_rankings):
-        if g_name == my_profile:
-            user_rank = idx + 1
-            break
-            
-    my_score = all_totals[my_profile]
-    
-    if user_rank == 1:
-        st.success(f"🏆 **1st Place Ribbon!** You are leading the pack with **{my_score} points**! Keep up the incredible consistency!")
-    elif user_rank == 2:
-        st.info(f"🥈 **2nd Place Medal!** You're sitting strong at **{my_score} points**—just a stone's throw away from the top spot!")
-    elif user_rank == 3:
-        st.warning(f"🥉 **3rd Place Medal!** You have **{my_score} points**. Push hard to climb the ranks!")
-    else:
-        st.markdown(f"🏅 **Rank #{user_rank}** — You have **{my_score} points**. Keep checking off those daily habits to close the gap!")
-    
     g_data_profile = st.session_state.app_data["gladiators"][my_profile]
     user_email = st.text_input(f"📧 Email Address for Weekly Reports ({my_profile})", value=g_data_profile.get("email", ""))
     g_data_profile["email"] = user_email
@@ -487,7 +486,6 @@ elif view_mode == "Gladiators & Scores":
     st.markdown("Here is the live roster of all contestants and their total accumulated points so far:")
     st.markdown("---")
     
-    # Calculate scores and sort them from highest to lowest
     all_gladiator_scores = {name: calculate_total(name) for name in gladiator_names}
     sorted_gladiators = sorted(all_gladiator_scores.items(), key=lambda x: x[1], reverse=True)
     
@@ -496,7 +494,6 @@ elif view_mode == "Gladiators & Scores":
         g_color = g_info.get("color", "#1B4F72")
         has_veto = "Yes (Custom Veto Active)" if g_info.get("vetoed_habit") else "None"
         
-        # Display each gladiator in a clean card format
         with st.container():
             col_g1, col_g2, col_g3 = st.columns([3, 2, 2])
             with col_g1:
