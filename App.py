@@ -143,16 +143,17 @@ if view_mode == "Daily Logger":
     day_state = c_data_profile["days"][day_str]
     
     st.write(f"### 📝 Check-in for Day {selected_day} ({day_date_map[selected_day].strftime('%d %B %Y')}) — {current_profile}")
-    st.info("💡 *Tip: Click on the 'ℹ️ Info' expander next to any habit to review its specific daily rule.*")
+    st.info("💡 *Tip: Click on the compact 'ℹ️' button next to any item to review its specific daily rule.*")
     
-    # Render Checkboxes with Info popovers
+    # Render Checkboxes with Info popovers positioned compactly on the right in the same line
     col1, col2 = st.columns(2)
     
     def render_habit_item(i, column):
         h_key = f"habit_{i}"
         title, info_text = habits_info[h_key]
         with column:
-            c_col, i_col = st.columns([0.8, 0.2])
+            # 88% width for checkbox, 12% width for the compact info button on the same line
+            c_col, i_col = st.columns([0.88, 0.12])
             with c_col:
                 day_state[h_key] = st.checkbox(title, value=day_state.get(h_key, False), key=f"{current_profile}_d{selected_day}_{h_key}")
             with i_col:
@@ -300,4 +301,3 @@ else:
             st.info(f"📬 In a fully hosted deployment, this formatted report would automatically be dispatched to **{rep_email}** every week!")
         else:
             st.warning("⚠️ Enter your email address in the Daily Logger view to enable automatic weekly report deliveries.")
- 
